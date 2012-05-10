@@ -3,6 +3,7 @@ package worker
 import (
 	. "github.com/sdegutis/go.bdd"
 	"io/ioutil"
+	"net/url"
 	"os"
 	"testing"
 	"time"
@@ -18,6 +19,13 @@ func TestEverything(*testing.T) {
 			panic("To run the specs, set the IRON_TOKEN and IRON_PROJECT environment variables")
 		}
 		w := New(ironProject, ironToken)
+
+		ironURL := os.Getenv("IRON_URL")
+		if ironURL != "" {
+			baseURL, err := url.Parse(ironURL)
+			Expect(err, ToBeNil)
+			w.BaseURL = baseURL
+		}
 
 		It("Prepares the specs by deleting all existing code packages", func() {
 			codes, err := w.CodePackageList(0, 100)
@@ -80,7 +88,7 @@ func TestEverything(*testing.T) {
 			Expect(log, ToDeepEqual, []byte("Hello world!\n"))
 		})
 
-		It("Cancels a Task", func() {
+		It("Cancels a task", func() {
 			delay := 10 * time.Second
 			ids, err := w.TaskQueue(Task{CodeName: "GoFun", Delay: &delay})
 			Expect(err, ToBeNil)
@@ -91,6 +99,25 @@ func TestEverything(*testing.T) {
 
 			info, err := w.TaskInfo(id)
 			Expect(info.Status, ToEqual, "cancelled")
+		})
+
+		It("Queues a lot of tasks and lists them", func() {
+			delay := 100 * time.Second
+			ids, err := w.TaskQueue(Task{CodeName: "GoFun", Delay: &delay})
+			Expect(err, ToBeNil)
+			firstId := ids[0]
+			time.Sleep(1 * time.Second)
+
+			ids, err = w.TaskQueue(Task{CodeName: "GoFun", Delay: &delay})
+			Expect(err, ToBeNil)
+			secondId := ids[0]
+
+			tasks, err := w.TaskList()
+			Expect(err, ToBeNil)
+
+			Expect(tasks[0].CreatedAt.After(tasks[1].CreatedAt), ToEqual, true)
+			Expect(tasks[0].Id, ToEqual, secondId)
+			Expect(tasks[1].Id, ToEqual, firstId)
 		})
 
 		It("Schedules a Task ", func() {
