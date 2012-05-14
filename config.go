@@ -146,6 +146,22 @@ func (s *Settings) commonConfigFile(family, product, path string) {
 		panic("Invalid JSON in " + path + ": " + err.Error())
 	}
 
+	s.commonConfigMap(data)
+
+	ipData, found := data[family+"_"+product]
+	if found {
+		pData := ipData.(map[string]interface{})
+		s.commonConfigMap(pData)
+	}
+}
+
+func (s *Settings) commonConfigMap(data map[string]interface{}) {
+	if token, found := data["token"]; found {
+		s.Token = token.(string)
+	}
+	if projectId, found := data["project_id"]; found {
+		s.ProjectId = projectId.(string)
+	}
 	if host, found := data["host"]; found {
 		s.Host = host.(string)
 	}
@@ -157,22 +173,5 @@ func (s *Settings) commonConfigFile(family, product, path string) {
 	}
 	if vers, found := data["api_version"]; found {
 		s.ApiVersion = vers.(string)
-	}
-
-	ipData, found := data[family+"_"+product]
-	if found {
-		pData := ipData.(map[string]interface{})
-		if host, found := pData["host"]; found {
-			s.Host = host.(string)
-		}
-		if prot, found := pData["protocol"]; found {
-			s.Protocol = prot.(string)
-		}
-		if port, found := pData["port"]; found {
-			s.Port = int(port.(float64))
-		}
-		if vers, found := pData["api_version"]; found {
-			s.ApiVersion = vers.(string)
-		}
 	}
 }
