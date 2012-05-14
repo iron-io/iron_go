@@ -48,41 +48,19 @@ func Config(fullProduct string) (settings Settings) {
 		}
 	}
 
-	// The global configuration file sets the defaults according to the file hierarchy.
 	(&base).globalConfig(family, product)
-	fmt.Println(base)
-
-	// The global environment variables overwrite the global configuration file’s values.
 	(&base).globalEnv(family, product)
-	fmt.Println(base)
-
-	// The product-specific environment variables overwrite everything before them.
 	(&base).productEnv(family, product)
-	fmt.Println(base)
-
-	// The local configuration file overwrites everything before it according to the file hierarchy.
 	(&base).localConfig(family, product)
-	fmt.Println(base)
-
-	// The configuration file specified when instantiating the client library overwrites everything before it according to the file hierarchy.
-	(&base).forceConfig(family, product)
-	fmt.Println(base)
-
-	// The arguments passed when instantiating the client library overwrite everything before them.
-	(&base).passedConfig(family, product)
-	fmt.Println(base)
 
 	return base
 }
 
 func (s *Settings) globalConfig(family, product string) {
-	u, err := user.Current()
-	if err != nil {
-		panic(err.Error())
+	if u, err := user.Current(); err == nil {
+		path := filepath.Join(u.HomeDir, ".iron.json")
+		s.UseConfigFile(family, product, path)
 	}
-
-	path := filepath.Join(u.HomeDir, ".iron.json")
-	s.commonConfigFile(family, product, path)
 }
 
 // The environment variables the scheme looks for are all of the same formula:
@@ -104,10 +82,8 @@ func (s *Settings) productEnv(family, product string) {
 }
 
 func (s *Settings) localConfig(family, product string) {
-	s.commonConfigFile(family, product, "iron.json")
+	s.UseConfigFile(family, product, "iron.json")
 }
-func (s *Settings) forceConfig(family, product string)  {}
-func (s *Settings) passedConfig(family, product string) {}
 
 func (s *Settings) commonEnv(prefix string) {
 	if token := os.Getenv(prefix + "TOKEN"); token != "" {
@@ -134,7 +110,7 @@ func (s *Settings) commonEnv(prefix string) {
 	}
 }
 
-func (s *Settings) commonConfigFile(family, product, path string) {
+func (s *Settings) UseConfigFile(family, product, path string) {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
 		return
