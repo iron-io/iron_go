@@ -2,7 +2,6 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -48,10 +47,10 @@ func Config(fullProduct string) (settings Settings) {
 		}
 	}
 
-	(&base).globalConfig(family, product)
-	(&base).globalEnv(family, product)
-	(&base).productEnv(family, product)
-	(&base).localConfig(family, product)
+	base.globalConfig(family, product)
+	base.globalEnv(family, product)
+	base.productEnv(family, product)
+	base.localConfig(family, product)
 
 	return base
 }
