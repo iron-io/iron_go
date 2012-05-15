@@ -1,3 +1,4 @@
+// client for the IronCache REST API
 package cache
 
 import (
@@ -6,54 +7,91 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
+
+	"github.com/manveru/go.iron/config"
+)
+
+var (
+	escape = url.QueryEscape
 )
 
 type Cache struct {
-	Domain    string
-	Token     string
-	ProjectId string
-	Name      string
+	Config config.Settings
+	Name   string
 }
 
-func (c Cache) Endpoint(action string) string {
-	// BaseURL: "http://staging-dev.iron.io.s3-website-us-east-1.amazonaws.com:433",
-	return "https://" + c.Domain + ".iron.io/1/projects/" + c.ProjectId + "/caches/" + action
+func url(c *Cache, action ...string) url.URL {
+	cc := c.Config
+
+	parts := append([]string{cc.ApiVersion, "projects", cc.ProjectId, "caches"}, action...)
+	for n, part := range parts {
+		parts[n] = escape(part)
+	}
+
+	u := url.URL{}
+	u.Scheme = cc.Protocol
+	u.Host = fmt.Sprintf(
+		"%s.iron.io:%d/%s/projects/%s",
+		escape(cc.Host), cc.Port, strings.Join(parts, "/"))
+	return u
 }
 
-func (c Cache) request(method, action string, body interface{}) (response *http.Response, err error) {
-	client := http.Client{}
+func query(u *url.URL, values url.Values) *url.URL {
+	u.RawQuery = values.Encode()
+	return u
+}
 
-	request, err := http.NewRequest("GET", c.Endpoint(action), nil)
+func (c *Cache) Caches(page, perPage int) ([]Cache, error) {
+	query := url.Values{}
+	query.Add("page", fmt.Sprintf("%d", page))
+	query.Add("per_page", fmt.Sprintf("%d", perPage))
+
+	url := c.url()
+	url.RawQuery = query.Encode()
+
+	response, err := c.request("GET", url, nil)
 	if err != nil {
-		return nil, err
-	}
-	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Accept-Encoding", "gzip/deflate")
-	request.Header.Set("Authorization", "OAuth "+c.Token)
-
-	dumpRequest(request)
-	if response, err = client.Do(request); err != nil {
-		return
-	}
-	if err = resToErr(response); err != nil {
 		return
 	}
 
-	dumpResponse(response)
+	body := []struct {
+		Project_id string
+		Name       string
+	}{}
+	err = json.NewDecoder(response.Body).Decode(&body)
+	if err != nil {
+		return
+	}
+
+	caches = make([]Cache, 0, len(body))
+	for _, item := range body {
+		caches = append(caches, Cache{
+			Host:      c.Host,
+			Token:     c.Token,
+			ProjectId: item.Project_id,
+			Name:      item.Name,
+		})
+	}
+
 	return
 }
 
-func Caches(token, projectId string) (caches []Cache, err error) {
+func New(domain, token, projectId, name string) *Context {
+}
+
+func Caches(domain, token, projectId string) (caches []Cache, err error) {
 	c := Cache{
-		Domain:    "cache-aws-us-east-1",
-		Token:     "asdf",
-		ProjectId: "qwert",
+		Domain:    domain,
+		Token:     token,
+		ProjectId: projectId,
 	}
 
-	response, err := c.request("GET", "caches", nil)
+	response, err := c.request("GET", nil)
 	if err != nil {
 		return
 	}
@@ -101,12 +139,12 @@ func (i *Item) Gob(value interface{}) error {
 	return nil
 }
 
-// Put adds an Item to the cache.
-func (c Cache) Put(key string, item *Item) (err error) {
+// Set adds an Item to the cache.
+func (c Cache) Set(key string, item Item) (err error) {
 	body := &bytes.Buffer{}
 	encoder := json.NewEncoder(body)
 	encoder.Encode(item)
-	_, err = c.request("PUT", "items/"+key, body)
+	_, err = c.request("PUT", body, c.Name, "items", key)
 	return
 }
 
@@ -115,7 +153,7 @@ func (c Cache) Increment(key string, amount int64) (err error) {
 	body := &bytes.Buffer{}
 	encoder := json.NewEncoder(body)
 	encoder.Encode(map[string]int64{"amount": amount})
-	_, err = c.request("POST", "items/"+url.QueryEscape(key), body)
+	_, err = c.request("POST", body, c.Name, "items", key)
 	return
 }
 
@@ -123,7 +161,7 @@ func (c Cache) Increment(key string, amount int64) (err error) {
 func (c Cache) Get(key string) (value string, err error) {
 	//projects/{Project ID}/caches/{Cache Name}/items/{Key}	GET	Get an Item from a Cache
 
-	response, err := c.request("GET", "items/"+url.QueryEscape(key), nil)
+	response, err := c.request("GET", nil, c.Name, "items", key)
 	if err != nil {
 		return
 	}
@@ -138,12 +176,41 @@ func (c Cache) Get(key string) (value string, err error) {
 		return
 	}
 
-	return body.Value
+	return body.Value, err
 }
 
 // Delete removes an item from the cache.
 func (c Cache) Delete(key string) (err error) {
-	_, err = c.request("DELETE", "items/"+url.QueryEscape(key), nil)
+	_, err = c.request("DELETE", nil, c.Name, "items", key)
+	return
+}
+
+func (c *Cache) request(method string, body io.Reader, action ...string) (response *http.Response, err error) {
+	client := http.Client{}
+
+	request, err := http.NewRequest(method, c.Endpoint(action...), body)
+	if err != nil {
+		return nil, err
+	}
+
+	request.Header.Set("Authorization", "OAuth "+c.Token)
+
+	if body == nil {
+		request.Header.Set("Accept", "application/json")
+		request.Header.Set("Accept-Encoding", "gzip/deflate")
+	} else {
+		request.Header.Set("Content-Type", "application/json")
+	}
+
+	// dumpRequest(request)
+	if response, err = client.Do(request); err != nil {
+		return
+	}
+	//dumpResponse(response)
+	if err = resToErr(response); err != nil {
+		return
+	}
+
 	return
 }
 
