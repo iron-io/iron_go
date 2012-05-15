@@ -22,7 +22,7 @@ type Settings struct {
 
 var (
 	presets = map[string]Settings{
-		"worker": Settings{Protocol: "https", Port: 443, ApiVersion: "1", Host: "worker-aws-us-east-1.iron.io"},
+		"worker": Settings{Protocol: "https", Port: 443, ApiVersion: "2", Host: "worker-aws-us-east-1.iron.io"},
 		"mq":     Settings{Protocol: "https", Port: 443, ApiVersion: "1", Host: "mq-aws-us-east-1.iron.io"},
 		"cache":  Settings{Protocol: "https", Port: 443, ApiVersion: "1", Host: "cache-aws-us-east-1.iron.io"},
 	}
