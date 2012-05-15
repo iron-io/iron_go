@@ -68,7 +68,6 @@ func (c *Cache) action(suffix ...string) *cacheURL {
 	u.Scheme = cc.Protocol
 	u.Host = fmt.Sprintf("%s:%d", escape(cc.Host), cc.Port)
 	u.Path = fmt.Sprintf("/%s/projects/%s/%s", cc.ApiVersion, cc.ProjectId, strings.Join(parts, "/"))
-	fmt.Println(u)
 	return u
 }
 
@@ -140,7 +139,7 @@ func (c Cache) Increment(key string, amount int64) (err error) {
 }
 
 // Get gets an item from the cache.
-func (c Cache) Get(key string) (value string, err error) {
+func (c Cache) Get(key string) (value []byte, err error) {
 	//projects/{Project ID}/caches/{Cache Name}/items/{Key}	GET	Get an Item from a Cache
 
 	response, err := c.request("GET", c.action(c.Name, "items", key), nil)
@@ -158,7 +157,7 @@ func (c Cache) Get(key string) (value string, err error) {
 		return
 	}
 
-	return string(body.Value), err
+	return body.Value, err
 }
 
 // Delete removes an item from the cache.
