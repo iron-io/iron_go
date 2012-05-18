@@ -1,31 +1,20 @@
-package worker
+package worker_test
 
 import (
-	. "github.com/sdegutis/go.bdd"
 	"io/ioutil"
-	"net/url"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/manveru/go.iron/worker"
+	. "github.com/sdegutis/go.bdd"
 )
 
 func TestEverything(*testing.T) {
 	defer PrintSpecReport()
 
 	Describe("iron.io worker", func() {
-		ironToken := os.Getenv("IRON_TOKEN")
-		ironProject := os.Getenv("IRON_PROJECT")
-		if ironToken == "" || ironProject == "" {
-			panic("To run the specs, set the IRON_TOKEN and IRON_PROJECT environment variables")
-		}
-		w := New(ironProject, ironToken)
-
-		ironURL := os.Getenv("IRON_URL")
-		if ironURL != "" {
-			baseURL, err := url.Parse(ironURL)
-			Expect(err, ToBeNil)
-			w.BaseURL = baseURL
-		}
+		w := worker.New()
 
 		It("Prepares the specs by deleting all existing code packages", func() {
 			codes, err := w.CodePackageList(0, 100)
@@ -54,7 +43,7 @@ func TestEverything(*testing.T) {
 
 			Expect(fd.Close(), ToBeNil)
 
-			pkg, err := NewGoCodePackage("GoFun", fd.Name())
+			pkg, err := worker.NewGoCodePackage("GoFun", fd.Name())
 			Expect(err, ToBeNil)
 
 			id, err := w.CodePackageUpload(pkg)
@@ -68,7 +57,7 @@ func TestEverything(*testing.T) {
 		})
 
 		It("Queues a Task", func() {
-			ids, err := w.TaskQueue(Task{CodeName: "GoFun"})
+			ids, err := w.TaskQueue(worker.Task{CodeName: "GoFun"})
 			Expect(err, ToBeNil)
 
 			id := ids[0]
@@ -90,7 +79,7 @@ func TestEverything(*testing.T) {
 
 		It("Cancels a task", func() {
 			delay := 10 * time.Second
-			ids, err := w.TaskQueue(Task{CodeName: "GoFun", Delay: &delay})
+			ids, err := w.TaskQueue(worker.Task{CodeName: "GoFun", Delay: &delay})
 			Expect(err, ToBeNil)
 
 			id := ids[0]
@@ -103,12 +92,12 @@ func TestEverything(*testing.T) {
 
 		It("Queues a lot of tasks and lists them", func() {
 			delay := 100 * time.Second
-			ids, err := w.TaskQueue(Task{CodeName: "GoFun", Delay: &delay})
+			ids, err := w.TaskQueue(worker.Task{CodeName: "GoFun", Delay: &delay})
 			Expect(err, ToBeNil)
 			firstId := ids[0]
 			time.Sleep(1 * time.Second)
 
-			ids, err = w.TaskQueue(Task{CodeName: "GoFun", Delay: &delay})
+			ids, err = w.TaskQueue(worker.Task{CodeName: "GoFun", Delay: &delay})
 			Expect(err, ToBeNil)
 			secondId := ids[0]
 
@@ -122,7 +111,7 @@ func TestEverything(*testing.T) {
 
 		It("Schedules a Task ", func() {
 			delay := 10 * time.Second
-			ids, err := w.Schedule(Schedule{
+			ids, err := w.Schedule(worker.Schedule{
 				Name:     "ScheduledGoFun",
 				CodeName: "GoFun",
 				Payload:  "foobar",
@@ -140,7 +129,7 @@ func TestEverything(*testing.T) {
 
 		It("Cancels a scheduled task", func() {
 			delay := 10 * time.Second
-			ids, err := w.Schedule(Schedule{
+			ids, err := w.Schedule(worker.Schedule{
 				Name:     "ScheduledGoFun",
 				CodeName: "GoFun",
 				Payload:  "foobar",

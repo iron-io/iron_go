@@ -2,151 +2,27 @@
 package worker
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 	"io/ioutil"
-	"net/http"
-	"net/http/httputil"
-	"net/url"
 	"os"
 	"os/exec"
 	"time"
+
+	"github.com/manveru/go.iron/api"
+	"github.com/manveru/go.iron/config"
 )
 
 type Worker struct {
-	ProjectId, Token, UserAgent string
-	ApiVersion                  int
-	BaseURL                     *url.URL
+	Settings config.Settings
 }
 
-func New(projectId, token string) *Worker {
-	baseURL, err := url.ParseRequestURI("https://worker-aws-us-east-1.iron.io:443/")
-	// baseURL, err := url.ParseRequestURI("http://localhost:7001/")
-	if err != nil {
-		panic(err)
-	}
-
-	return &Worker{
-		Token:      token,
-		ProjectId:  projectId,
-		BaseURL:    baseURL,
-		ApiVersion: 2,
-		UserAgent:  "go.iron/worker 0.1",
-	}
+func New() *Worker {
+	return &Worker{Settings: config.Config("iron_worker")}
 }
 
-func dumpRequest(req *http.Request) {
-	out, err := httputil.DumpRequestOut(req, true)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%q\n", out)
-}
-
-func dumpResponse(res *http.Response) {
-	out, err := httputil.DumpResponse(res, true)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%q\n", out)
-}
-
-func (w *Worker) request(method, action string, body io.Reader) (res *http.Response, err error) {
-	client := http.Client{}
-	uri := fmt.Sprintf("%s%d/projects/%s/%s", w.BaseURL, w.ApiVersion, w.ProjectId, action)
-	req, err := http.NewRequest(method, uri, body)
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Accept", "application/json")
-	req.Header.Set("Accept-Encoding", "gzip/deflate")
-	req.Header.Set("Authorization", "OAuth "+w.Token)
-
-	switch method {
-	case "GET", "DELETE":
-	default:
-		req.Header.Set("Content-Type", "application/json")
-	}
-
-	// dumpRequest(req)
-
-	res, err = client.Do(req)
-	if res.StatusCode != httpOk {
-		return res, resToErr(res)
-	}
-
-	// dumpResponse(res)
-
-	return res, err
-}
-
-func (w *Worker) getJSON(action string, data interface{}) (err error) {
-	res, err := w.request("GET", action, nil)
-	if err != nil {
-		return
-	}
-
-	err = json.NewDecoder(res.Body).Decode(data)
-
-	return
-}
-
-func resToErr(res *http.Response) (err *APIError) {
-	switch res.StatusCode {
-	case httpUnauthorized:
-		return &APIError{Response: res,
-			Msg: "Invalid authentication: The OAuth token is either not provided or invalid"}
-	case httpNotFound:
-		return &APIError{Response: res,
-			Msg: "Invalid endpoint: The resource, project, or endpoint being requested doesn't exist."}
-	case httpMethodNotAllowed:
-		return &APIError{Response: res,
-			Msg: "Invalid HTTP method: This endpoint doesn't support that particular verb"}
-	case httpNotAcceptable:
-		return &APIError{Response: res,
-			Msg: "Invalid request: Required fields are missing"}
-	default:
-		body := make([]byte, 0, res.ContentLength)
-		res.Body.Read(body)
-		msg := fmt.Sprintf("Unknown API Response %s: %q", res.Status, string(body))
-		return &APIError{Msg: msg, Response: res}
-	}
-
-	panic("There is no way you'll encounter this")
-}
-
-func responseWithBody(res *http.Response, data interface{}) (err error) {
-	return
-}
-
-const (
-	httpOk               = 200
-	httpUnauthorized     = 401
-	httpNotFound         = 404
-	httpMethodNotAllowed = 405
-	httpNotAcceptable    = 406
-)
-
-type APIError struct {
-	Msg      string
-	Response *http.Response
-}
-
-func (a APIError) Error() string {
-	return a.Msg
-}
-
-func (w *Worker) post(action string, obj interface{}) (res *http.Response, err error) {
-	body := &bytes.Buffer{}
-	encoder := json.NewEncoder(body)
-	m := make(map[string]interface{}, 1)
-	m[action] = obj
-	encoder.Encode(m)
-
-	return w.request("POST", action, body)
-}
+func (w *Worker) codes(s ...string) *api.URL     { return api.Action(w.Settings, "codes", s...) }
+func (w *Worker) tasks(s ...string) *api.URL     { return api.Action(w.Settings, "tasks", s...) }
+func (w *Worker) schedules(s ...string) *api.URL { return api.Action(w.Settings, "schedules", s...) }
 
 var GoCodeRunner = []byte(`#!/bin/sh
 root() {

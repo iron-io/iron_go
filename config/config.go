@@ -17,13 +17,30 @@ type Settings struct {
 	Protocol   string `json:"protocol"`
 	Port       int    `json:"port"`
 	ApiVersion string `json:"api_version"`
+	UserAgent  string `json:"user_agent"`
 }
 
 var (
 	presets = map[string]Settings{
-		"worker": Settings{Protocol: "https", Port: 443, ApiVersion: "2", Host: "worker-aws-us-east-1.iron.io"},
-		"mq":     Settings{Protocol: "https", Port: 443, ApiVersion: "1", Host: "mq-aws-us-east-1.iron.io"},
-		"cache":  Settings{Protocol: "https", Port: 443, ApiVersion: "1", Host: "cache-aws-us-east-1.iron.io"},
+		"worker": Settings{
+			Protocol:   "https",
+			Port:       443,
+			ApiVersion: "2",
+			Host:       "worker-aws-us-east-1.iron.io",
+			UserAgent:  "go.iron/worker 2.0",
+		},
+		"mq": Settings{Protocol: "https",
+			Port:       443,
+			ApiVersion: "1",
+			Host:       "mq-aws-us-east-1.iron.io",
+			UserAgent:  "go.iron/mq 1.0",
+		},
+		"cache": Settings{Protocol: "https",
+			Port:       443,
+			ApiVersion: "1",
+			Host:       "cache-aws-us-east-1.iron.io",
+			UserAgent:  "go.iron/cache 1.0",
+		},
 	}
 )
 
@@ -44,6 +61,7 @@ func Config(fullProduct string) (settings Settings) {
 			Port:       443,
 			ApiVersion: "1",
 			Host:       product + "-aws-us-east-1.iron.io",
+			UserAgent:  "go.iron",
 		}
 	}
 

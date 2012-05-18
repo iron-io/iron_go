@@ -43,31 +43,26 @@ func New(cacheName string) *Cache {
 	return &Cache{Settings: config.Config("iron_cache"), Name: cacheName}
 }
 
-func (c *Cache) action(suffix ...string) *api.URL {
+func (c *Cache) caches(suffix ...string) *api.URL {
 	return api.Action(c.Settings, "caches", suffix...)
 }
 
 func (c *Cache) ListCaches(page, perPage int) (caches []*Cache, err error) {
-	u := c.action().
-		QueryAdd("page", "%d", page).
-		QueryAdd("per_page", "%d", perPage)
-
-	response, err := api.Request(c.Settings, "GET", u, nil)
-	if err != nil {
-		return
-	}
-
-	body := []struct {
+	out := []struct {
 		Project_id string
 		Name       string
 	}{}
-	err = json.NewDecoder(response.Body).Decode(&body)
+
+	err = c.caches().
+		QueryAdd("page", "%d", page).
+		QueryAdd("per_page", "%d", perPage).
+		Req("GET", nil, &out)
 	if err != nil {
 		return
 	}
 
-	caches = make([]*Cache, 0, len(body))
-	for _, item := range body {
+	caches = make([]*Cache, 0, len(out))
+	for _, item := range out {
 		caches = append(caches, &Cache{
 			Settings: c.Settings,
 			Name:     item.Name,
@@ -78,10 +73,8 @@ func (c *Cache) ListCaches(page, perPage int) (caches []*Cache, err error) {
 }
 
 // Set adds an Item to the cache.
-func (c *Cache) Set(item *Item) (err error) {
-	body := &bytes.Buffer{}
-	encoder := json.NewEncoder(body)
-	encoder.Encode(struct {
+func (c Cache) Set(item *Item) (err error) {
+	in := struct {
 		Body      []byte `json:"body"`
 		ExpiresIn int    `json:"expires_in,omitempty"`
 		Replace   bool   `json:"replace,omitempty"`
@@ -91,47 +84,33 @@ func (c *Cache) Set(item *Item) (err error) {
 		ExpiresIn: int(item.Expiration.Seconds()),
 		Replace:   item.Replace,
 		Add:       item.Add,
-	})
+	}
 
-	_, err = api.Request(c.Settings, "PUT", c.action(c.Name, "items", item.Key), body)
-	return
+	return c.caches(c.Name, "items", item.Key).Req("PUT", &in, nil)
 }
 
 // Increment increments the corresponding item's value.
 func (c Cache) Increment(key string, amount int64) (err error) {
-	body := &bytes.Buffer{}
-	encoder := json.NewEncoder(body)
-	encoder.Encode(map[string]int64{"amount": amount})
-	_, err = api.Request(c.Settings, "POST", c.action(c.Name, "items", key), body)
-	return
+	in := map[string]int64{"amount": amount}
+	return c.caches(c.Name, "items", key).Req("POST", &in, nil)
 }
 
 // Get gets an item from the cache.
 func (c Cache) Get(key string) (value []byte, err error) {
-	//projects/{Project ID}/caches/{Cache Name}/items/{Key}	GET	Get an Item from a Cache
-
-	response, err := api.Request(c.Settings, "GET", c.action(c.Name, "items", key), nil)
-	if err != nil {
-		return
-	}
-
-	body := struct {
+	out := struct {
 		Cache string `json:"cache"`
 		Key   string `json:"key"`
 		Value []byte `json:"value"`
 	}{}
-	err = json.NewDecoder(response.Body).Decode(&body)
-	if err != nil {
-		return
+	if err = c.caches(c.Name, "items", key).Req("GET", nil, &out); err == nil {
+		value = out.Value
 	}
-
-	return body.Value, err
+	return
 }
 
 // Delete removes an item from the cache.
 func (c Cache) Delete(key string) (err error) {
-	_, err = api.Request(c.Settings, "DELETE", c.action(c.Name, "items", key), nil)
-	return
+	return c.caches(c.Name, "items", key).Req("DELETE", nil, nil)
 }
 
 type Codec struct {

@@ -4,11 +4,12 @@ import (
 	"archive/zip"
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"mime/multipart"
 	"net/http"
 	"time"
+
+	"github.com/manveru/go.iron/api"
 )
 
 type Schedule struct {
@@ -96,21 +97,21 @@ type CodeInfo struct {
 // aren’t enough results. If this is < 1, 1 will be the default. Maximum is 100.
 func (w *Worker) CodePackageList(page, perPage int) (codes []CodeInfo, err error) {
 	out := map[string][]CodeInfo{}
-	page = clamp(page, 0, 100)
-	perPage = clamp(perPage, 1, 100)
-	// TODO: find a nice way to use the url package for that
-	err = w.getJSON(fmt.Sprintf("codes?page=%d&perPage=%d", page, perPage), &out)
+
+	err = w.codes().
+		QueryAdd("page", "%d", page).
+		QueryAdd("per_page", "%d", perPage).
+		Req("GET", nil, &out)
 	if err != nil {
 		return
 	}
+
 	return out["codes"], nil
 }
 
 // CodePackageUpload uploads a code package
 func (w *Worker) CodePackageUpload(code Code) (id string, err error) {
 	client := http.Client{}
-	// TODO: find a nice way to use the url package for that
-	uri := fmt.Sprintf("%s%d/projects/%s/%s", w.BaseURL, w.ApiVersion, w.ProjectId, "codes")
 
 	body := &bytes.Buffer{}
 	mWriter := multipart.NewWriter(body)
@@ -150,24 +151,24 @@ func (w *Worker) CodePackageUpload(code Code) (id string, err error) {
 	// done with multipart
 	mWriter.Close()
 
-	req, err := http.NewRequest("POST", uri, body)
+	req, err := http.NewRequest("POST", w.codes().URL.String(), body)
 	if err != nil {
 		return
 	}
 
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("Accept-Encoding", "gzip/deflate")
-	req.Header.Set("Authorization", "OAuth "+w.Token)
+	req.Header.Set("Authorization", "OAuth "+w.Settings.Token)
 	req.Header.Set("Content-Type", mWriter.FormDataContentType())
-	req.Header.Set("User-Agent", w.UserAgent)
+	req.Header.Set("User-Agent", w.Settings.UserAgent)
 
 	// dumpRequest(req) NOTE: never do this here, it breaks stuff
 	response, err := client.Do(req)
 	if err != nil {
 		return
 	}
-	if response.StatusCode != httpOk {
-		return "", resToErr(response)
+	if err = api.ResToErr(response); err != nil {
+		return
 	}
 
 	// dumpResponse(response)
@@ -188,42 +189,32 @@ func (w *Worker) CodePackageUpload(code Code) (id string, err error) {
 // CodePackageInfo gets info about a code package
 func (w *Worker) CodePackageInfo(codeId string) (code CodeInfo, err error) {
 	out := CodeInfo{}
-	err = w.getJSON("codes/"+codeId, &out)
-	if err != nil {
-		return
-	}
-	return out, nil
+	err = w.codes(codeId).Req("GET", nil, &out)
+	return out, err
 }
 
 // CodePackageDelete deletes a code package
 func (w *Worker) CodePackageDelete(codeId string) (err error) {
-	_, err = w.request("DELETE", "codes/"+codeId, nil)
-	return err
+	return w.codes(codeId).Req("DELETE", nil, nil)
 }
 
 // CodePackageDownload downloads a code package
 func (w *Worker) CodePackageDownload(codeId string) (code Code, err error) {
 	out := Code{}
-	err = w.getJSON("codes/"+codeId+"/download", &out)
-	if err != nil {
-		return
-	}
-	return out, nil
+	err = w.codes(codeId, "download").Req("GET", nil, &out)
+	return out, err
 }
 
 // CodePackageRevisions lists the revisions of a code pacakge
 func (w *Worker) CodePackageRevisions(codeId string) (code Code, err error) {
 	out := Code{}
-	err = w.getJSON("codes/"+codeId+"/revisions", &out)
-	if err != nil {
-		return
-	}
-	return out, nil
+	err = w.codes(codeId, "revisions").Req("GET", nil, &out)
+	return out, err
 }
 
 func (w *Worker) TaskList() (tasks []TaskInfo, err error) {
 	out := map[string][]TaskInfo{}
-	err = w.getJSON("tasks", &out)
+	err = w.tasks().Req("GET", nil, &out)
 	if err != nil {
 		return
 	}
@@ -232,7 +223,7 @@ func (w *Worker) TaskList() (tasks []TaskInfo, err error) {
 
 // TaskQueue queues a task
 func (w *Worker) TaskQueue(tasks ...Task) (taskIds []string, err error) {
-	allTasks := make([]map[string]interface{}, 0, len(tasks))
+	outTasks := make([]map[string]interface{}, 0, len(tasks))
 
 	for _, task := range tasks {
 		thisTask := map[string]interface{}{
@@ -247,27 +238,24 @@ func (w *Worker) TaskQueue(tasks ...Task) (taskIds []string, err error) {
 			thisTask["delay"] = (*task.Delay).Seconds()
 		}
 
-		allTasks = append(allTasks, thisTask)
+		outTasks = append(outTasks, thisTask)
 	}
 
-	res, err := w.post("tasks", allTasks)
-	if err != nil {
-		return
-	}
-
-	data := struct {
+	in := map[string][]map[string]interface{}{"tasks": outTasks}
+	out := struct {
 		Tasks []struct {
 			Id string `json:"id"`
 		} `json:"tasks"`
 		Msg string `json:"msg"`
 	}{}
 
-	err = json.NewDecoder(res.Body).Decode(&data)
+	err = w.tasks().Req("POST", &in, &out)
 	if err != nil {
 		return
 	}
 
-	for _, task := range data.Tasks {
+	taskIds = make([]string, 0, len(out.Tasks))
+	for _, task := range out.Tasks {
 		taskIds = append(taskIds, task.Id)
 	}
 
@@ -277,27 +265,24 @@ func (w *Worker) TaskQueue(tasks ...Task) (taskIds []string, err error) {
 // TaskInfo gives info about a given task
 func (w *Worker) TaskInfo(taskId string) (task TaskInfo, err error) {
 	out := TaskInfo{}
-	err = w.getJSON("tasks/"+taskId, &out)
-	if err != nil {
-		return
-	}
-	return out, nil
+	err = w.tasks(taskId).Req("GET", nil, &out)
+	return out, err
 }
 
 func (w *Worker) TaskLog(taskId string) (log []byte, err error) {
-	res, err := w.request("GET", "tasks/"+taskId+"/log", nil)
+	response, err := w.tasks(taskId, "log").Request("GET", nil)
 	if err != nil {
 		return
 	}
 
-	log, err = ioutil.ReadAll(res.Body)
+	log, err = ioutil.ReadAll(response.Body)
 	return
 }
 
 // TaskCancel cancels a Task
 func (w *Worker) TaskCancel(taskId string) (err error) {
-	_, err = w.request("POST", "tasks/"+taskId+"/cancel", nil)
-	return
+	_, err = w.tasks(taskId, "cancel").Request("POST", nil)
+	return err
 }
 
 // TaskProgress sets a Task's Progress
@@ -309,7 +294,7 @@ func (w *Worker) TaskQueueWebhook() (err error) { return }
 // ScheduleList lists Scheduled Tasks
 func (w *Worker) ScheduleList() (schedules []ScheduleInfo, err error) {
 	out := map[string][]ScheduleInfo{}
-	err = w.getJSON("schedules", &out)
+	err = w.schedules().Req("GET", nil, &out)
 	if err != nil {
 		return
 	}
@@ -318,7 +303,7 @@ func (w *Worker) ScheduleList() (schedules []ScheduleInfo, err error) {
 
 // Schedule a Task
 func (w *Worker) Schedule(schedules ...Schedule) (scheduleIds []string, err error) {
-	allSchedules := make([]map[string]interface{}, 0, len(schedules))
+	outSchedules := make([]map[string]interface{}, 0, len(schedules))
 
 	for _, schedule := range schedules {
 		sm := map[string]interface{}{
@@ -344,26 +329,25 @@ func (w *Worker) Schedule(schedules ...Schedule) (scheduleIds []string, err erro
 		if schedule.EndAt != nil {
 			sm["end_at"] = *schedule.EndAt
 		}
-		allSchedules = append(allSchedules, sm)
+		outSchedules = append(outSchedules, sm)
 	}
 
-	res, err := w.post("schedules", allSchedules)
-
-	data := struct {
+	in := map[string][]map[string]interface{}{"schedules": outSchedules}
+	out := struct {
 		Schedules []struct {
 			Id string `json:"id"`
 		} `json:"schedules"`
 		Msg string `json:"msg"`
 	}{}
 
-	err = json.NewDecoder(res.Body).Decode(&data)
+	err = w.schedules().Req("POST", &in, &out)
 	if err != nil {
 		return
 	}
 
-	scheduleIds = make([]string, 0, len(data.Schedules))
+	scheduleIds = make([]string, 0, len(out.Schedules))
 
-	for _, schedule := range data.Schedules {
+	for _, schedule := range out.Schedules {
 		scheduleIds = append(scheduleIds, schedule.Id)
 	}
 
@@ -373,15 +357,12 @@ func (w *Worker) Schedule(schedules ...Schedule) (scheduleIds []string, err erro
 // ScheduleInfo gets info about a scheduled task
 func (w *Worker) ScheduleInfo(scheduleId string) (info ScheduleInfo, err error) {
 	info = ScheduleInfo{}
-	err = w.getJSON("schedules/"+scheduleId, &info)
-	if err != nil {
-		return
-	}
+	err = w.schedules(scheduleId).Req("GET", nil, &info)
 	return info, nil
 }
 
 // ScheduleCancel cancels a scheduled task
 func (w *Worker) ScheduleCancel(scheduleId string) (err error) {
-	_, err = w.request("POST", "schedules/"+scheduleId+"/cancel", nil)
+	_, err = w.schedules(scheduleId, "cancel").Request("POST", nil)
 	return
 }

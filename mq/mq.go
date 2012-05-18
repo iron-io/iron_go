@@ -29,20 +29,22 @@ func New(queueName string) *Queue {
 	return &Queue{Settings: config.Config("iron_mq"), Name: queueName}
 }
 
-func (q *Queue) action(suffix ...string) *api.URL { return api.Action(q.Settings, "queues", suffix...) }
+func (q *Queue) queues(s ...string) *api.URL { return api.Action(q.Settings, "queues", s...) }
 
 func (q *Queue) ListQueues(page, perPage int) (queues []*Queue, err error) {
-	u := q.action().
-		QueryAdd("page", "%d", page).
-		QueryAdd("per_page", "%d", perPage)
-
 	out := []struct {
 		Id         string
 		Project_id string
 		Name       string
 	}{}
 
-	u.Req(q.Settings, "GET", nil, &out)
+	err = q.queues().
+		QueryAdd("page", "%d", page).
+		QueryAdd("per_page", "%d", perPage).
+		Req("GET", nil, &out)
+	if err != nil {
+		return
+	}
 
 	queues = make([]*Queue, 0, len(out))
 	for _, item := range out {
@@ -63,7 +65,7 @@ type QueueInfo struct {
 
 func (q *Queue) Info() (QueueInfo, error) {
 	qi := QueueInfo{}
-	err := q.action(q.Name).Req(q.Settings, "GET", nil, &qi)
+	err := q.queues(q.Name).Req("GET", nil, &qi)
 	return qi, err
 }
 
@@ -92,7 +94,7 @@ func (q *Queue) PushMessages(msgs ...*Message) (ids []string, err error) {
 		Msg string   `json:"msg"`
 	}{}
 
-	err = q.action(q.Name, "messages").Req(q.Settings, "POST", &in, &out)
+	err = q.queues(q.Name, "messages").Req("POST", &in, &out)
 	return out.IDs, err
 }
 
@@ -117,13 +119,13 @@ func (q *Queue) Get() (msg *Message, err error) {
 }
 
 func (q *Queue) GetN(n int) (msgs []*Message, err error) {
-	u := q.action(q.Name, "messages").QueryAdd("n", "%d", n)
-
 	out := struct {
 		Messages []*Message `json:"messages"`
 	}{}
 
-	err = u.Req(q.Settings, "GET", nil, &out)
+	err = q.queues(q.Name, "messages").
+		QueryAdd("n", "%d", n).
+		Req("GET", nil, &out)
 	if err != nil {
 		return
 	}
@@ -137,6 +139,5 @@ func (q *Queue) GetN(n int) (msgs []*Message, err error) {
 }
 
 func (q *Queue) DeleteMsg(msgId string) (err error) {
-	u := q.action(q.Name, "messages", msgId)
-	return u.Req(q.Settings, "DELETE", nil, nil)
+	return q.queues(q.Name, "messages", msgId).Req("DELETE", nil, nil)
 }

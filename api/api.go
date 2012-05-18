@@ -15,7 +15,10 @@ import (
 	"github.com/manveru/go.iron/config"
 )
 
-type URL url.URL
+type URL struct {
+	URL      url.URL
+	Settings config.Settings
+}
 
 func Action(cs config.Settings, prefix string, suffix ...string) *URL {
 	parts := append([]string{prefix}, suffix...)
@@ -23,21 +26,21 @@ func Action(cs config.Settings, prefix string, suffix ...string) *URL {
 		parts[n] = url.QueryEscape(part)
 	}
 
-	u := &URL{}
-	u.Scheme = cs.Protocol
-	u.Host = fmt.Sprintf("%s:%d", url.QueryEscape(cs.Host), cs.Port)
-	u.Path = fmt.Sprintf("/%s/projects/%s/%s", cs.ApiVersion, cs.ProjectId, strings.Join(parts, "/"))
+	u := &URL{Settings: cs, URL: url.URL{}}
+	u.URL.Scheme = cs.Protocol
+	u.URL.Host = fmt.Sprintf("%s:%d", url.QueryEscape(cs.Host), cs.Port)
+	u.URL.Path = fmt.Sprintf("/%s/projects/%s/%s", cs.ApiVersion, cs.ProjectId, strings.Join(parts, "/"))
 	return u
 }
 
 func (u *URL) QueryAdd(key string, format string, value interface{}) *URL {
-	query := u.Query()
+	query := u.URL.Query()
 	query.Add(key, fmt.Sprintf(format, value))
-	u.RawQuery = query.Encode()
+	u.URL.RawQuery = query.Encode()
 	return u
 }
 
-func (u *URL) Req(s config.Settings, method string, in, out interface{}) (err error) {
+func (u *URL) Req(method string, in, out interface{}) (err error) {
 	var reqBody io.Reader
 	if in != nil {
 		data, err := json.Marshal(in)
@@ -46,30 +49,27 @@ func (u *URL) Req(s config.Settings, method string, in, out interface{}) (err er
 		}
 		reqBody = bytes.NewBuffer(data)
 	}
-	response, err := Request(s, method, u, reqBody)
+	response, err := u.Request(method, reqBody)
 	if err == nil && out != nil {
 		return json.NewDecoder(response.Body).Decode(out)
 	}
 	return
 }
 
-func (u *URL) String() string    { return (*url.URL)(u).String() }
-func (u *URL) Query() url.Values { return (*url.URL)(u).Query() }
-
-func Request(s config.Settings, method string, url fmt.Stringer, body io.Reader) (response *http.Response, err error) {
+func (u *URL) Request(method string, body io.Reader) (response *http.Response, err error) {
 	client := http.Client{}
 
-	request, err := http.NewRequest(method, url.String(), body)
+	request, err := http.NewRequest(method, u.URL.String(), body)
 	if err != nil {
 		return nil, err
 	}
 
-	request.Header.Set("Authorization", "OAuth "+s.Token)
+	request.Header.Set("Authorization", "OAuth "+u.Settings.Token)
+	request.Header.Set("Accept", "application/json")
+	request.Header.Set("Accept-Encoding", "gzip/deflate")
+	request.Header.Set("User-Agent", u.Settings.UserAgent)
 
-	if body == nil {
-		request.Header.Set("Accept", "application/json")
-		request.Header.Set("Accept-Encoding", "gzip/deflate")
-	} else {
+	if body != nil {
 		request.Header.Set("Content-Type", "application/json")
 	}
 
