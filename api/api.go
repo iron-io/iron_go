@@ -73,11 +73,11 @@ func (u *URL) Request(method string, body io.Reader) (response *http.Response, e
 		request.Header.Set("Content-Type", "application/json")
 	}
 
-	DumpRequest(request)
+	// DumpRequest(request)
 	if response, err = client.Do(request); err != nil {
 		return
 	}
-	DumpResponse(response)
+	// DumpResponse(response)
 	if err = ResToErr(response); err != nil {
 		return
 	}
