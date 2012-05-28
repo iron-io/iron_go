@@ -23,9 +23,8 @@ func init() {
 
 		It("Puts a value into the cache", func() {
 			c := cache.New("cachename")
-			err := c.Set(&cache.Item{
-				Key:        "keyname",
-				Value:      []byte("value"),
+			err := c.Put("keyname", &cache.Item{
+				Value:      "value",
 				Expiration: 2 * time.Second,
 			})
 			Expect(err, ToBeNil)
@@ -45,8 +44,8 @@ func ExampleStoringData() {
 	// test_cache is the default cache name
 	c := cache.New("test_cache")
 
-	// All values are stored as []byte.
-	c.Set(&cache.Item{Key: "item 1", Value: []byte("IronCache")})
+	// All values are stored as string.
+	c.Put("item 1", &cache.Item{Value: "IronCache"})
 
 	// They are retrieved as []byte as well.
 	value, err := c.Get("item 1")

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"encoding/gob"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/manveru/go.iron/api"
@@ -22,10 +23,8 @@ type Cache struct {
 }
 
 type Item struct {
-	// Key is the Item's key
-	Key string
 	// Value is the Item's value
-	Value []byte
+	Value string
 	// Object is the Item's value for use with a Codec.
 	Object interface{}
 	// Number of seconds until expiration. The zero value defaults to 7 days,
@@ -72,10 +71,10 @@ func (c *Cache) ListCaches(page, perPage int) (caches []*Cache, err error) {
 	return
 }
 
-// Set adds an Item to the cache.
-func (c Cache) Set(item *Item) (err error) {
+// Put adds an Item to the cache, overwriting any existing key of the same name.
+func (c *Cache) Put(key string, item *Item) (err error) {
 	in := struct {
-		Body      []byte `json:"body"`
+		Body      string `json:"body"`
 		ExpiresIn int    `json:"expires_in,omitempty"`
 		Replace   bool   `json:"replace,omitempty"`
 		Add       bool   `json:"add,omitempty"`
@@ -86,21 +85,71 @@ func (c Cache) Set(item *Item) (err error) {
 		Add:       item.Add,
 	}
 
-	return c.caches(c.Name, "items", item.Key).Req("PUT", &in, nil)
+	return c.caches(c.Name, "items", key).Req("PUT", &in, nil)
+}
+
+func anyToString(value interface{}) (str string, err error) {
+	switch v := value.(type) {
+	case string:
+		str = v
+	case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64:
+		str = fmt.Sprintf("%d", v)
+	case float32, float64:
+		str = fmt.Sprintf("%f", v)
+	case bool:
+		str = fmt.Sprintf("%t", v)
+	case fmt.Stringer:
+		str = v.String()
+	default:
+		var bytes []byte
+		if bytes, err = json.Marshal(value); err == nil {
+			str = string(bytes)
+		}
+	}
+
+	return
+}
+
+func (c *Cache) Set(key string, value interface{}, ttl ...int) (err error) {
+	str, err := anyToString(value)
+	if err == nil {
+		err = c.Put(key, &Item{
+			Value: str, Expiration: time.Duration(ttl[0]) * time.Second,
+		})
+	}
+	return
+}
+func (c *Cache) Add(key string, value ...interface{}) (err error) {
+	str, err := anyToString(value)
+	if err == nil {
+		err = c.Put(key, &Item{
+			Value: str, Expiration: time.Duration(123) * time.Second, Add: true,
+		})
+	}
+	return
+}
+func (c *Cache) Replace(key string, value ...interface{}) (err error) {
+	str, err := anyToString(value)
+	if err == nil {
+		err = c.Put(key, &Item{
+			Value: str, Expiration: time.Duration(123) * time.Second, Replace: true,
+		})
+	}
+	return
 }
 
 // Increment increments the corresponding item's value.
-func (c Cache) Increment(key string, amount int64) (err error) {
+func (c *Cache) Increment(key string, amount int64) (err error) {
 	in := map[string]int64{"amount": amount}
 	return c.caches(c.Name, "items", key).Req("POST", &in, nil)
 }
 
 // Get gets an item from the cache.
-func (c Cache) Get(key string) (value []byte, err error) {
+func (c *Cache) Get(key string) (value string, err error) {
 	out := struct {
 		Cache string `json:"cache"`
 		Key   string `json:"key"`
-		Value []byte `json:"value"`
+		Value string `json:"value"`
 	}{}
 	if err = c.caches(c.Name, "items", key).Req("GET", nil, &out); err == nil {
 		value = out.Value
@@ -109,7 +158,7 @@ func (c Cache) Get(key string) (value []byte, err error) {
 }
 
 // Delete removes an item from the cache.
-func (c Cache) Delete(key string) (err error) {
+func (c *Cache) Delete(key string) (err error) {
 	return c.caches(c.Name, "items", key).Req("DELETE", nil, nil)
 }
 
@@ -118,28 +167,29 @@ type Codec struct {
 	Unmarshal func([]byte, interface{}) error
 }
 
-func (cd Codec) Set(c *Cache, item *Item) (err error) {
-	if item.Value, err = cd.Marshal(item.Object); err != nil {
+func (cd Codec) Put(c *Cache, key string, item *Item) (err error) {
+	bytes, err := cd.Marshal(item.Object)
+	if err != nil {
 		return
 	}
 
-	return c.Set(item)
+	item.Value = string(bytes)
+
+	return c.Put(key, item)
 }
 
-func (cd Codec) Get(c *Cache, key string, v interface{}) (item *Item, err error) {
-	str, err := c.Get(key)
+func (cd Codec) Get(c *Cache, key string, object *interface{}) (item *Item, err error) {
+	value, err := c.Get(key)
 	if err != nil {
 		return
 	}
 
-	bts := []byte(str)
-
-	err = cd.Unmarshal(bts, v)
+	err = cd.Unmarshal([]byte(value), object)
 	if err != nil {
 		return
 	}
 
-	return &Item{Key: key, Value: bts, Object: v}, nil
+	return &Item{Value: value, Object: object}, nil
 }
 
 func gobMarshal(v interface{}) ([]byte, error) {
