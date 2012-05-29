@@ -106,18 +106,22 @@ func ResToErr(response *http.Response) (err error) {
 	case http.StatusOK:
 		return nil
 	case http.StatusUnauthorized:
-		return errors.New("Invalid authentication: The OAuth token is either not provided or invalid")
+		return errors.New(response.Status + ": The OAuth token is either not provided or invalid")
 	case http.StatusNotFound:
-		return errors.New("Invalid endpoint: The resource, project, or endpoint being requested doesn't exist.")
+		return errors.New(response.Status + ": The resource, project, or endpoint being requested doesn't exist.")
 	case http.StatusMethodNotAllowed:
-		return errors.New("Invalid HTTP method: This endpoint doesn't support that particular verb")
+		return errors.New(response.Status + ": This endpoint doesn't support that particular verb")
 	case http.StatusNotAcceptable:
-		return errors.New("Invalid request: Required fields are missing")
+		return errors.New(response.Status + ": Required fields are missing")
 	default:
-		return errors.New("Unknown API Response: " + response.Status)
+		out := map[string]interface{}{}
+		json.NewDecoder(response.Body).Decode(&out)
+		if msg, ok := out["msg"]; ok {
+			return errors.New(fmt.Sprint(msg))
+		} else {
+			return errors.New(response.Status + ": Unknown API Response")
+		}
 	}
 
 	panic("There is no way you'll encounter this")
 }
-
-func JSONRequest() {}
