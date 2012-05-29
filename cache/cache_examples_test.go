@@ -1,99 +1,101 @@
 package cache_test
 
 import (
+	"fmt"
 	"github.com/manveru/go.iron/cache"
 )
 
-func SetExample() {
+func p(a ...interface{}) { fmt.Println(a...) }
+
+func Example1StoringData() {
+	// For configuration info, see http://dev.iron.io/articles/configuration
 	c := cache.New("test_cache")
+
+	// Numbers will get stored as numbers
 	c.Set("number_item", 42)
-	// Output: hi
+
+	// Strings get stored as strings
+	c.Set("string_item", "Hello, IronCache")
+
+	// Objects and dicts get JSON-encoded and stored as strings
+	c.Set("complex_item", map[string]interface{}{
+		"test": "this is a dict",
+		"args": []string{"apples", "oranges"},
+	})
+
+	fmt.Println("all stored")
+	// Output:
+	// all stored
 }
 
-/*
-require 'iron_cache'
+func Example2Incrementing() {
+	c := cache.New("test_cache")
 
-# For configuration info, see http://dev.iron.io/articles/configuration
-cache = IronCache::Client.new()
+	p(c.Increment("number_item", 10))
+	p(c.Get("number_item"))
 
-# Set the default cache name
-cache.cache_name = "test_cache"
+	p(c.Increment("string_item", 10))
 
-# Numbers will get stored as numbers
-cache.items.put("number_item", 42)
+	p(c.Increment("complex_item", 10))
 
-# Strings get stored as strings
-cache.items.put("string_item", "Hello, IronCache")
+	// Output:
+	// <nil>
+	// 52 <nil>
+	// Cannot increment or decrement non-numeric value
+	// Cannot increment or decrement non-numeric value
+}
 
-# Objects and dicts get JSON-encoded and stored as strings
-complex_item = {"test" => "this is a dict", "args" => ["apples", "oranges"] }
-cache.items.put("complex_item", complex_item)
-*/
+func Example3Decrementing() {
+	c := cache.New("test_cache")
 
-/*
-require 'iron_cache'
+	p(c.Increment("number_item", -10))
+	p(c.Get("number_item"))
 
-# For configuration info, see http://dev.iron.io/articles/configuration
-cache = IronCache::Client.new()
+	p(c.Increment("string_item", -10))
 
-# Set the default cache name
-cache.cache_name = "test_cache"
+	p(c.Increment("complex_item", -10))
 
-# Numbers can be incremented
-cache.items.increment("number_item", -10)
+	// Output:
+	// <nil>
+	// 42 <nil>
+	// Cannot increment or decrement non-numeric value
+	// Cannot increment or decrement non-numeric value
+}
 
-# Everything else throws a 400 error
-cache.items.increment("number_item", "a lot")
-cache.items.increment("string_item", 10)
-cache.items.increment("complex_item", 10)
-*/
+func Example4RetrievingData() {
+	c := cache.New("test_cache")
 
-/*
-require 'iron_cache'
+	value, err := c.Get("number_item")
+	fmt.Printf("%#v (%#v)\n", value, err)
 
-# For configuration info, see http://dev.iron.io/articles/configuration
-cache = IronCache::Client.new()
+	value, err = c.Get("string_item")
+	fmt.Printf("%#v (%#v)\n", value, err)
 
-# Set the default cache name
-cache.cache_name = "test_cache"
+	// JSON is returned as strings
+	value, err = c.Get("complex_item")
+	fmt.Printf("%#v (%#v)\n", value, err)
 
-# Numbers can be decremented
-cache.items.increment("number_item", -10)
+	// You can use the JSON codec to deserialize it.
+	obj := struct {
+		Args []string
+		Test string
+	}{}
+	err = cache.JSON.Get(c, "complex_item", &obj)
+	fmt.Printf("%#v (%#v)\n", obj, err)
+	// Output:
+	// 42 (<nil>)
+	// "Hello, IronCache" (<nil>)
+	// "{\"args\":[\"apples\",\"oranges\"],\"test\":\"this is a dict\"}" (<nil>)
+	// struct { Args []string; Test string }{Args:[]string{"apples", "oranges"}, Test:"this is a dict"} (<nil>)
+}
 
-# Everything else throws a 400 error
-cache.items.increment("number_item", "negative a lot")
-cache.items.increment("string_item", -10)
-cache.items.increment("complex_item", -10)
-*/
+func Example5DeletingData() {
+	c := cache.New("test_cache")
 
-/*
-require 'iron_cache'
+	// Immediately delete an item
+	c.Delete("string_item")
 
-# For configuration info, see http://dev.iron.io/articles/configuration
-cache = IronCache::Client.new()
-
-# Set the default cache name
-cache.cache_name = "test_cache"
-
-# Numbers will get stored as numbers
-p cache.items.get("number_item").value
-
-# Strings get stored as strings
-p cache.items.get("string_item").value
-
-# Objects and dicts get JSON-encoded and stored as strings
-p cache.items.get("complex_item").value
-*/
-
-/*
-require 'iron_cache'
-
-# For configuration info, see http://dev.iron.io/articles/configuration
-cache = IronCache::Client.new()
-
-# Set the default cache name
-cache.cache_name = "test_cache"
-
-# Immediately delete an item
-cache.items.delete("string_item")
-*/
+	fmt.Println(c.Get("string_item"))
+	// Output:
+	// <nil> 404 Not Found: The resource, project, or endpoint being requested doesn't exist.
+}

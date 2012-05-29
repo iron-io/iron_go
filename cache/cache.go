@@ -24,7 +24,7 @@ type Cache struct {
 
 type Item struct {
 	// Value is the Item's value
-	Value string
+	Value interface{}
 	// Object is the Item's value for use with a Codec.
 	Object interface{}
 	// Number of seconds until expiration. The zero value defaults to 7 days,
@@ -74,10 +74,10 @@ func (c *Cache) ListCaches(page, perPage int) (caches []*Cache, err error) {
 // Put adds an Item to the cache, overwriting any existing key of the same name.
 func (c *Cache) Put(key string, item *Item) (err error) {
 	in := struct {
-		Body      string `json:"body"`
-		ExpiresIn int    `json:"expires_in,omitempty"`
-		Replace   bool   `json:"replace,omitempty"`
-		Add       bool   `json:"add,omitempty"`
+		Body      interface{} `json:"body"`
+		ExpiresIn int         `json:"expires_in,omitempty"`
+		Replace   bool        `json:"replace,omitempty"`
+		Add       bool        `json:"add,omitempty"`
 	}{
 		Body:      item.Value,
 		ExpiresIn: int(item.Expiration.Seconds()),
@@ -88,16 +88,16 @@ func (c *Cache) Put(key string, item *Item) (err error) {
 	return c.caches(c.Name, "items", key).Req("PUT", &in, nil)
 }
 
-func anyToString(value interface{}) (str string, err error) {
+func anyToString(value interface{}) (str interface{}, err error) {
 	switch v := value.(type) {
 	case string:
 		str = v
 	case uint, uint8, uint16, uint32, uint64, int, int8, int16, int32, int64:
-		str = fmt.Sprintf("%d", v)
+		str = v
 	case float32, float64:
-		str = fmt.Sprintf("%f", v)
+		str = v
 	case bool:
-		str = fmt.Sprintf("%t", v)
+		str = v
 	case fmt.Stringer:
 		str = v.String()
 	default:
@@ -113,9 +113,11 @@ func anyToString(value interface{}) (str string, err error) {
 func (c *Cache) Set(key string, value interface{}, ttl ...int) (err error) {
 	str, err := anyToString(value)
 	if err == nil {
-		err = c.Put(key, &Item{
-			Value: str, Expiration: time.Duration(ttl[0]) * time.Second,
-		})
+		if len(ttl) > 0 {
+			err = c.Put(key, &Item{Value: str, Expiration: time.Duration(ttl[0]) * time.Second})
+		} else {
+			err = c.Put(key, &Item{Value: str})
+		}
 	}
 	return
 }
@@ -141,15 +143,15 @@ func (c *Cache) Replace(key string, value ...interface{}) (err error) {
 // Increment increments the corresponding item's value.
 func (c *Cache) Increment(key string, amount int64) (err error) {
 	in := map[string]int64{"amount": amount}
-	return c.caches(c.Name, "items", key).Req("POST", &in, nil)
+	return c.caches(c.Name, "items", key, "increment").Req("POST", &in, nil)
 }
 
 // Get gets an item from the cache.
-func (c *Cache) Get(key string) (value string, err error) {
+func (c *Cache) Get(key string) (value interface{}, err error) {
 	out := struct {
-		Cache string `json:"cache"`
-		Key   string `json:"key"`
-		Value string `json:"value"`
+		Cache string      `json:"cache"`
+		Key   string      `json:"key"`
+		Value interface{} `json:"value"`
 	}{}
 	if err = c.caches(c.Name, "items", key).Req("GET", nil, &out); err == nil {
 		value = out.Value
@@ -178,18 +180,18 @@ func (cd Codec) Put(c *Cache, key string, item *Item) (err error) {
 	return c.Put(key, item)
 }
 
-func (cd Codec) Get(c *Cache, key string, object *interface{}) (item *Item, err error) {
+func (cd Codec) Get(c *Cache, key string, object interface{}) (err error) {
 	value, err := c.Get(key)
 	if err != nil {
 		return
 	}
 
-	err = cd.Unmarshal([]byte(value), object)
+	err = cd.Unmarshal([]byte(value.(string)), object)
 	if err != nil {
 		return
 	}
 
-	return &Item{Value: value, Object: object}, nil
+	return
 }
 
 func gobMarshal(v interface{}) ([]byte, error) {
