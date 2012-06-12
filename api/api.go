@@ -78,7 +78,7 @@ func (u *URL) Request(method string, body io.Reader) (response *http.Response, e
 		return
 	}
 	// DumpResponse(response)
-	if err = ResToErr(response); err != nil {
+	if err = ResponseAsError(response); err != nil {
 		return
 	}
 
@@ -101,7 +101,7 @@ func DumpResponse(response *http.Response) {
 	fmt.Printf("%q\n", out)
 }
 
-func ResToErr(response *http.Response) (err error) {
+func ResponseAsError(response *http.Response) (err error) {
 	switch response.StatusCode {
 	case http.StatusOK:
 		return nil

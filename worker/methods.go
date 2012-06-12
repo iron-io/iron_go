@@ -167,7 +167,7 @@ func (w *Worker) CodePackageUpload(code Code) (id string, err error) {
 	if err != nil {
 		return
 	}
-	if err = api.ResToErr(response); err != nil {
+	if err = api.ResponseAsError(response); err != nil {
 		return
 	}
 
