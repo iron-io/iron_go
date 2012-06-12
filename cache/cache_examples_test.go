@@ -23,7 +23,7 @@ func Example1StoringData() {
 		"args": []string{"apples", "oranges"},
 	})
 
-	fmt.Println("all stored")
+	p("all stored")
 	// Output:
 	// all stored
 }
@@ -95,7 +95,7 @@ func Example5DeletingData() {
 	// Immediately delete an item
 	c.Delete("string_item")
 
-	fmt.Println(c.Get("string_item"))
+	p(c.Get("string_item"))
 	// Output:
 	// <nil> 404 Not Found: The resource, project, or endpoint being requested doesn't exist.
 }
