@@ -41,7 +41,7 @@ func init() {
 
 		It("Pushes ands gets a message", func() {
 			c := mq.New("queuename")
-			id1, err := c.Push("just a little test")
+			id1, err := c.PushString("just a little test")
 			Expect(err, ToBeNil)
 			defer c.DeleteMsg(id1)
 
