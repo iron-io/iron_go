@@ -172,6 +172,12 @@ func (c *Cache) Get(key string) (value interface{}, err error) {
 	return
 }
 
+func (c *Cache) GetMeta(key string) (value map[string]interface{}, err error) {
+	value = map[string]interface{}{}
+	err = c.caches(c.Name, "items", key).Req("GET", nil, &value)
+	return
+}
+
 // Delete removes an item from the cache.
 func (c *Cache) Delete(key string) (err error) {
 	return c.caches(c.Name, "items", key).Req("DELETE", nil, nil)

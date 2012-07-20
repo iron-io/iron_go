@@ -35,6 +35,23 @@ func init() {
 			Expect(value, ToEqual, "value")
 		})
 
+		It("Gets meta-information about an item", func() {
+			err := c.Put("forever", &cache.Item{Value: "and ever", Expiration: 0})
+			Expect(err, ToBeNil)
+			value, err := c.GetMeta("forever")
+			Expect(err, ToBeNil)
+			Expect(value, ToDeepEqual,
+				map[string]interface{}{
+					"key":     "forever",
+					"cas":     5.766174005002437e+18,
+					"cache":   "cachename",
+					"value":   "and ever",
+					"expires": "9999-01-01T01:00:00+01:00",
+					"flags":   0,
+				},
+			)
+		})
+
 		It("Sets numeric items", func() {
 			err := c.Set("number", 42)
 			Expect(err, ToBeNil)
