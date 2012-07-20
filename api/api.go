@@ -33,6 +33,13 @@ func Action(cs config.Settings, prefix string, suffix ...string) *URL {
 	return u
 }
 
+func VersionAction(cs config.Settings) *URL {
+	u := &URL{Settings: cs, URL: url.URL{Scheme: cs.Protocol}}
+	u.URL.Host = fmt.Sprintf("%s:%d", url.QueryEscape(cs.Host), cs.Port)
+	u.URL.Path = "/version"
+	return u
+}
+
 func (u *URL) QueryAdd(key string, format string, value interface{}) *URL {
 	query := u.URL.Query()
 	query.Add(key, fmt.Sprintf(format, value))

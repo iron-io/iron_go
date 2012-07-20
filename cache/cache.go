@@ -71,6 +71,19 @@ func (c *Cache) ListCaches(page, perPage int) (caches []*Cache, err error) {
 	return
 }
 
+func (c *Cache) ServerVersion() (version string, err error) {
+	out := map[string]string{}
+	err = api.VersionAction(c.Settings).Req("GET", nil, &out)
+	if err != nil {
+		return
+	}
+	return out["version"], nil
+}
+
+func (c *Cache) Clear() (err error) {
+	return c.caches(c.Name, "clear").Req("POST", nil, nil)
+}
+
 // Put adds an Item to the cache, overwriting any existing key of the same name.
 func (c *Cache) Put(key string, item *Item) (err error) {
 	in := struct {
