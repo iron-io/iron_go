@@ -14,7 +14,7 @@ type Settings struct {
 	Token      string `json:"token"`
 	ProjectId  string `json:"project_id"`
 	Host       string `json:"host"`
-	Protocol   string `json:"protocol"`
+	Scheme     string `json:"scheme"`
 	Port       int    `json:"port"`
 	ApiVersion string `json:"api_version"`
 	UserAgent  string `json:"user_agent"`
@@ -23,19 +23,21 @@ type Settings struct {
 var (
 	presets = map[string]Settings{
 		"worker": Settings{
-			Protocol:   "https",
+			Scheme:     "https",
 			Port:       443,
 			ApiVersion: "2",
 			Host:       "worker-aws-us-east-1.iron.io",
 			UserAgent:  "go.iron/worker 2.0",
 		},
-		"mq": Settings{Protocol: "https",
+		"mq": Settings{
+			Scheme:     "https",
 			Port:       443,
 			ApiVersion: "1",
 			Host:       "mq-aws-us-east-1.iron.io",
 			UserAgent:  "go.iron/mq 1.0",
 		},
-		"cache": Settings{Protocol: "https",
+		"cache": Settings{
+			Scheme:     "https",
 			Port:       443,
 			ApiVersion: "1",
 			Host:       "cache-aws-us-east-1.iron.io",
@@ -57,7 +59,7 @@ func Config(fullProduct string) (settings Settings) {
 
 	if !found {
 		base = Settings{
-			Protocol:   "https",
+			Scheme:     "https",
 			Port:       443,
 			ApiVersion: "1",
 			Host:       product + "-aws-us-east-1.iron.io",
@@ -112,8 +114,8 @@ func (s *Settings) commonEnv(prefix string) {
 	if host := os.Getenv(prefix + "HOST"); host != "" {
 		s.Host = host
 	}
-	if prot := os.Getenv(prefix + "PROTOCOL"); prot != "" {
-		s.Protocol = prot
+	if prot := os.Getenv(prefix + "SCHEME"); prot != "" {
+		s.Scheme = prot
 	}
 	if port := os.Getenv(prefix + "PORT"); port != "" {
 		n, err := strconv.ParseInt(port, 10, 32)
@@ -158,8 +160,8 @@ func (s *Settings) commonConfigMap(data map[string]interface{}) {
 	if host, found := data["host"]; found {
 		s.Host = host.(string)
 	}
-	if prot, found := data["protocol"]; found {
-		s.Protocol = prot.(string)
+	if prot, found := data["scheme"]; found {
+		s.Scheme = prot.(string)
 	}
 	if port, found := data["port"]; found {
 		s.Port = int(port.(float64))
