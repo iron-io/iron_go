@@ -3,6 +3,7 @@ package mq_test
 import (
 	"testing"
 
+	"fmt"
 	"github.com/manveru/go.iron/mq"
 	. "github.com/sdegutis/go.bdd"
 )
@@ -51,6 +52,29 @@ func init() {
 			Expect(msg, ToNotBeNil)
 			Expect(msg.Id, ToDeepEqual, id1)
 			Expect(msg.Body, ToDeepEqual, "just a little test")
+		})
+
+		It("clears the queue", func() {
+			q := mq.New("queuename")
+
+			strings := []string{}
+			for n := 0; n < 100; n++ {
+				strings = append(strings, fmt.Sprint("test: ", n))
+			}
+
+			_, err := q.PushStrings(strings...)
+			Expect(err, ToBeNil)
+
+			info, err := q.Info()
+			Expect(err, ToBeNil)
+			Expect(info.Size, ToEqual, 100)
+
+			err = q.Clear()
+			Expect(err, ToBeNil)
+
+			info, err = q.Info()
+			Expect(err, ToBeNil)
+			Expect(info.Size, ToEqual, 0)
 		})
 	})
 }

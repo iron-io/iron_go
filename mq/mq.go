@@ -151,6 +151,10 @@ func (q Queue) GetN(n int) (msgs []*Message, err error) {
 	return out.Messages, nil
 }
 
+func (q Queue) Clear() (err error) {
+	return q.queues(q.Name, "clear").Req("POST", nil, nil)
+}
+
 func (q Queue) DeleteMsg(msgId string) (err error) {
 	return q.queues(q.Name, "messages", msgId).Req("DELETE", nil, nil)
 }
