@@ -7,10 +7,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/manveru/go.iron/config"
 )
@@ -63,10 +65,22 @@ func (u *URL) Req(method string, in, out interface{}) (err error) {
 	return
 }
 
+var MaxRequestRetries = 5
+
 func (u *URL) Request(method string, body io.Reader) (response *http.Response, err error) {
 	client := http.Client{}
 
-	request, err := http.NewRequest(method, u.URL.String(), body)
+	var bodyBytes []byte
+	if body == nil {
+		bodyBytes = []byte{}
+	} else {
+		bodyBytes, err = ioutil.ReadAll(body)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	request, err := http.NewRequest(method, u.URL.String(), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -80,10 +94,24 @@ func (u *URL) Request(method string, body io.Reader) (response *http.Response, e
 		request.Header.Set("Content-Type", "application/json")
 	}
 
-	// DumpRequest(request)
-	if response, err = client.Do(request); err != nil {
-		return
+	for tries := 0; tries <= MaxRequestRetries; tries++ {
+		request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
+		response, err = client.Do(request)
+		if err != nil {
+			if err == io.EOF {
+				continue
+			}
+			return
+		}
+
+		if response.StatusCode == http.StatusServiceUnavailable {
+			delay := (tries + 1) * 10 // smooth out delays from 0-2
+			time.Sleep(time.Duration(delay*delay) * time.Millisecond)
+		}
+
+		break
 	}
+
 	// DumpResponse(response)
 	if err = ResponseAsError(response); err != nil {
 		return
