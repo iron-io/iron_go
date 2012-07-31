@@ -70,28 +70,28 @@ func Example3DeleteMessagesFromTheQueue() {
 func Example4ClearQueue() {
 	q := mq.New("test_queue")
 
-	for {
-		msgs, err := q.GetN(100)
-		if err != nil {
-			p(err)
-			break
-		}
-		if len(msgs) <= 0 {
-			break
-		}
-
-		for _, msg := range msgs {
-			msg.Delete()
-		}
-	}
-
 	info, err := q.Info()
 
 	p(err)
 	p("Name:", info.Name)
 	p("Size:", info.Size)
 
+	err = q.Clear()
+	p(err)
+
+	info, err = q.Info()
+
+	p(err)
+	p("Name:", info.Name)
+	p("Size:", info.Size)
+
 	// Output:
+	// <nil>
+	// Name: test_queue
+	// Size: 0
+	// <nil>
+	// Name: test_queue
+	// Size: 0
 	// <nil>
 	// Name: test_queue
 	// Size: 0
