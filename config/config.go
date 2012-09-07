@@ -143,16 +143,16 @@ func (s *Settings) UseConfigFile(family, product, path string) {
 		panic("Invalid JSON in " + path + ": " + err.Error())
 	}
 
-	s.commonConfigMap(data)
+	s.UseConfigMap(data)
 
 	ipData, found := data[family+"_"+product]
 	if found {
 		pData := ipData.(map[string]interface{})
-		s.commonConfigMap(pData)
+		s.UseConfigMap(pData)
 	}
 }
 
-func (s *Settings) commonConfigMap(data map[string]interface{}) {
+func (s *Settings) UseConfigMap(data map[string]interface{}) {
 	if token, found := data["token"]; found {
 		s.Token = token.(string)
 	}
