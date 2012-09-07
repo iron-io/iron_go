@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 )
@@ -21,27 +22,28 @@ type Settings struct {
 }
 
 var (
-	presets = map[string]Settings{
+	goVersion = runtime.Version()
+	presets   = map[string]Settings{
 		"worker": Settings{
 			Scheme:     "https",
 			Port:       443,
 			ApiVersion: "2",
 			Host:       "worker-aws-us-east-1.iron.io",
-			UserAgent:  "go.iron/worker 2.0",
+			UserAgent:  "go.iron/worker 2.0 (Go " + goVersion + ")",
 		},
 		"mq": Settings{
 			Scheme:     "https",
 			Port:       443,
 			ApiVersion: "1",
 			Host:       "mq-aws-us-east-1.iron.io",
-			UserAgent:  "go.iron/mq 1.0",
+			UserAgent:  "go.iron/mq 1.0 (Go " + goVersion + ")",
 		},
 		"cache": Settings{
 			Scheme:     "https",
 			Port:       443,
 			ApiVersion: "1",
 			Host:       "cache-aws-us-east-1.iron.io",
-			UserAgent:  "go.iron/cache 1.0",
+			UserAgent:  "go.iron/cache 1.0 (Go " + goVersion + ")",
 		},
 	}
 )
@@ -167,6 +169,9 @@ func (s *Settings) commonConfigMap(data map[string]interface{}) {
 		s.Port = int(port.(float64))
 	}
 	if vers, found := data["api_version"]; found {
+		s.ApiVersion = vers.(string)
+	}
+	if vers, found := data["user_agent"]; found {
 		s.ApiVersion = vers.(string)
 	}
 }
