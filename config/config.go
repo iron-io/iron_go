@@ -12,13 +12,13 @@ import (
 )
 
 type Settings struct {
-	Token      string `json:"token"`
-	ProjectId  string `json:"project_id"`
-	Host       string `json:"host"`
-	Scheme     string `json:"scheme"`
-	Port       int    `json:"port"`
-	ApiVersion string `json:"api_version"`
-	UserAgent  string `json:"user_agent"`
+	Token      string `json:"token,omitempty"`
+	ProjectId  string `json:"project_id,omitempty"`
+	Host       string `json:"host,omitempty"`
+	Scheme     string `json:"scheme,omitempty"`
+	Port       uint16 `json:"port,omitempty"`
+	ApiVersion string `json:"api_version,omitempty"`
+	UserAgent  string `json:"user_agent,omitempty"`
 }
 
 var (
@@ -120,11 +120,11 @@ func (s *Settings) commonEnv(prefix string) {
 		s.Scheme = prot
 	}
 	if port := os.Getenv(prefix + "PORT"); port != "" {
-		n, err := strconv.ParseInt(port, 10, 32)
+		n, err := strconv.ParseUint(port, 10, 16)
 		if err != nil {
 			panic(err)
 		}
-		s.Port = int(n)
+		s.Port = uint16(n)
 	}
 	if vers := os.Getenv(prefix + "API_VERSION"); vers != "" {
 		s.ApiVersion = vers
@@ -166,7 +166,7 @@ func (s *Settings) commonConfigMap(data map[string]interface{}) {
 		s.Scheme = prot.(string)
 	}
 	if port, found := data["port"]; found {
-		s.Port = int(port.(float64))
+		s.Port = uint16(port.(float64))
 	}
 	if vers, found := data["api_version"]; found {
 		s.ApiVersion = vers.(string)
