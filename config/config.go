@@ -116,8 +116,8 @@ func (s *Settings) commonEnv(prefix string) {
 	if host := os.Getenv(prefix + "HOST"); host != "" {
 		s.Host = host
 	}
-	if prot := os.Getenv(prefix + "SCHEME"); prot != "" {
-		s.Scheme = prot
+	if scheme := os.Getenv(prefix + "SCHEME"); scheme != "" {
+		s.Scheme = scheme
 	}
 	if port := os.Getenv(prefix + "PORT"); port != "" {
 		n, err := strconv.ParseUint(port, 10, 16)
