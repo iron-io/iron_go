@@ -155,10 +155,10 @@ func (q Queue) Clear() (err error) {
 	return q.queues(q.Name, "clear").Req("POST", nil, nil)
 }
 
-func (q Queue) DeleteMsg(msgId string) (err error) {
+func (q Queue) DeleteMessage(msgId string) (err error) {
 	return q.queues(q.Name, "messages", msgId).Req("DELETE", nil, nil)
 }
 
 func (m Message) Delete() (err error) {
-	return m.q.DeleteMsg(m.Id)
+	return m.q.DeleteMessage(m.Id)
 }

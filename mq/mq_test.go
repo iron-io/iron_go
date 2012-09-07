@@ -34,7 +34,7 @@ func init() {
 				Expect(err, ToBeNil)
 
 				for _, msg := range msgs {
-					err = c.DeleteMsg(msg.Id)
+					err = c.DeleteMessage(msg.Id)
 					Expect(err, ToBeNil)
 				}
 			}
@@ -44,7 +44,7 @@ func init() {
 			c := mq.New("queuename")
 			id1, err := c.PushString("just a little test")
 			Expect(err, ToBeNil)
-			defer c.DeleteMsg(id1)
+			defer c.DeleteMessage(id1)
 
 			msg, err := c.Get()
 			Expect(err, ToBeNil)
