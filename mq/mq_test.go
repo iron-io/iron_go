@@ -25,8 +25,7 @@ func init() {
 
 			for {
 				info, err := c.Info()
-				Expect(err, ToBeNil)
-				if info.Size == 0 {
+				if err != nil || info.Size == 0 {
 					break
 				}
 

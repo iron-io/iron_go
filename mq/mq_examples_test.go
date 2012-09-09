@@ -73,8 +73,7 @@ func Example4ClearQueue() {
 	info, err := q.Info()
 
 	p(err)
-	p("Name:", info.Name)
-	p("Size:", info.Size)
+	p("Before Clean(); Name:", info.Name, "Size:", info.Size)
 
 	err = q.Clear()
 	p(err)
@@ -82,17 +81,12 @@ func Example4ClearQueue() {
 	info, err = q.Info()
 
 	p(err)
-	p("Name:", info.Name)
-	p("Size:", info.Size)
+	p("After  Clean(); Name:", info.Name, "Size:", info.Size)
 
 	// Output:
 	// <nil>
-	// Name: test_queue
-	// Size: 0
+	// Before Clean(); Name: test_queue Size: 1
 	// <nil>
-	// Name: test_queue
-	// Size: 0
 	// <nil>
-	// Name: test_queue
-	// Size: 0
+	// After  Clean(); Name: test_queue Size: 0
 }
