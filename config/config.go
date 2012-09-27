@@ -2,6 +2,7 @@ package config
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -22,6 +23,7 @@ type Settings struct {
 }
 
 var (
+	debug     = false
 	goVersion = runtime.Version()
 	presets   = map[string]Settings{
 		"worker": Settings{
@@ -48,9 +50,19 @@ var (
 	}
 )
 
+func dbg(v ...interface{}) {
+	if debug {
+		fmt.Fprintln(os.Stderr, v...)
+	}
+}
+
 // fullProduct is like "iron_worker" and "iron_mq", not "worker" or "mq", to
 // keep some flexibility in future.
 func Config(fullProduct string) (settings Settings) {
+	if os.Getenv("IRON_CONFIG_DEBUG") != "" {
+		debug = true
+		dbg("debugging of config enabled")
+	}
 	pair := strings.SplitN(fullProduct, "_", 2)
 	if len(pair) != 2 {
 		panic("Invalid product name, has to use prefix.")
@@ -109,15 +121,19 @@ func (s *Settings) localConfig(family, product string) {
 func (s *Settings) commonEnv(prefix string) {
 	if token := os.Getenv(prefix + "TOKEN"); token != "" {
 		s.Token = token
+		dbg("env has TOKEN:", s.Token)
 	}
 	if pid := os.Getenv(prefix + "PROJECT_ID"); pid != "" {
 		s.ProjectId = pid
+		dbg("env has PROJECT_ID:", s.ProjectId)
 	}
 	if host := os.Getenv(prefix + "HOST"); host != "" {
 		s.Host = host
+		dbg("env has HOST:", s.Host)
 	}
 	if scheme := os.Getenv(prefix + "SCHEME"); scheme != "" {
 		s.Scheme = scheme
+		dbg("env has SCHEME:", s.Scheme)
 	}
 	if port := os.Getenv(prefix + "PORT"); port != "" {
 		n, err := strconv.ParseUint(port, 10, 16)
@@ -125,15 +141,18 @@ func (s *Settings) commonEnv(prefix string) {
 			panic(err)
 		}
 		s.Port = uint16(n)
+		dbg("env has PORT:", s.Port)
 	}
 	if vers := os.Getenv(prefix + "API_VERSION"); vers != "" {
 		s.ApiVersion = vers
+		dbg("env has API_VERSION:", s.ApiVersion)
 	}
 }
 
 func (s *Settings) UseConfigFile(family, product, path string) {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
+		dbg("tried to", err, ": skipping")
 		return
 	}
 
@@ -143,6 +162,7 @@ func (s *Settings) UseConfigFile(family, product, path string) {
 		panic("Invalid JSON in " + path + ": " + err.Error())
 	}
 
+	dbg("config in", path, "found")
 	s.UseConfigMap(data)
 
 	ipData, found := data[family+"_"+product]
@@ -155,23 +175,30 @@ func (s *Settings) UseConfigFile(family, product, path string) {
 func (s *Settings) UseConfigMap(data map[string]interface{}) {
 	if token, found := data["token"]; found {
 		s.Token = token.(string)
+		dbg("config has token:", s.Token)
 	}
 	if projectId, found := data["project_id"]; found {
 		s.ProjectId = projectId.(string)
+		dbg("config has project_id:", s.ProjectId)
 	}
 	if host, found := data["host"]; found {
 		s.Host = host.(string)
+		dbg("config has host:", s.Host)
 	}
 	if prot, found := data["scheme"]; found {
 		s.Scheme = prot.(string)
+		dbg("config has scheme:", s.Scheme)
 	}
 	if port, found := data["port"]; found {
 		s.Port = uint16(port.(float64))
+		dbg("config has port:", s.Port)
 	}
 	if vers, found := data["api_version"]; found {
 		s.ApiVersion = vers.(string)
+		dbg("config has api_version:", s.ApiVersion)
 	}
-	if vers, found := data["user_agent"]; found {
-		s.ApiVersion = vers.(string)
+	if agent, found := data["user_agent"]; found {
+		s.UserAgent = agent.(string)
+		dbg("config has user_agent:", s.UserAgent)
 	}
 }
