@@ -24,6 +24,14 @@ func (w *Worker) codes(s ...string) *api.URL     { return api.Action(w.Settings,
 func (w *Worker) tasks(s ...string) *api.URL     { return api.Action(w.Settings, "tasks", s...) }
 func (w *Worker) schedules(s ...string) *api.URL { return api.Action(w.Settings, "schedules", s...) }
 
+// exponential sleep between retries, replace this with your own preferred strategy
+var SleepBetweenRetries = func(previousDuration time.Duration) time.Duration {
+	if previousDuration >= 60*time.Second {
+		return previousDuration
+	}
+	return previousDuration * previousDuration
+}
+
 var GoCodeRunner = []byte(`#!/bin/sh
 root() {
   while [ $# -gt 0 ]; do
@@ -101,6 +109,8 @@ func (w *Worker) WaitForTask(taskId string) chan TaskInfo {
 	out := make(chan TaskInfo)
 	go func() {
 		defer close(out)
+		retryDelay := 100 * time.Millisecond
+
 		for {
 			info, err := w.TaskInfo(taskId)
 			if err != nil {
@@ -108,7 +118,8 @@ func (w *Worker) WaitForTask(taskId string) chan TaskInfo {
 			}
 
 			if info.Status == "queued" || info.Status == "running" {
-				time.Sleep(5)
+				retryDelay = sleepBetweenRetries(retryDelay)
+				time.Sleep(retryDelay)
 			} else {
 				out <- info
 				return
@@ -121,12 +132,20 @@ func (w *Worker) WaitForTask(taskId string) chan TaskInfo {
 
 func (w *Worker) WaitForTaskLog(taskId string) chan []byte {
 	out := make(chan []byte)
+
 	go func() {
 		defer close(out)
+		retryDelay := 100 * time.Millisecond
+
 		for {
 			log, err := w.TaskLog(taskId)
 			if err != nil {
-				println(err.Error())
+				e, ok := err.(api.HTTPResponseError)
+				if ok && e.Response().StatusCode == 404 {
+					retryDelay = sleepBetweenRetries(retryDelay)
+					time.Sleep(retryDelay)
+					continue
+				}
 				return
 			}
 			out <- log
