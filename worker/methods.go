@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/manveru/go.iron/api"
+	"github.com/iron-io/go.iron/api"
 )
 
 type Schedule struct {

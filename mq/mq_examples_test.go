@@ -2,7 +2,7 @@ package mq_test
 
 import (
 	"fmt"
-	"github.com/manveru/go.iron/mq"
+	"github.com/iron-io/go.iron/mq"
 )
 
 var p = fmt.Println

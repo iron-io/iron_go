@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"fmt"
-	"github.com/manveru/go.iron/mq"
+	"github.com/iron-io/go.iron/mq"
 	. "github.com/sdegutis/go.bdd"
 )
 

@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"time"
 
-	"github.com/manveru/go.iron/api"
-	"github.com/manveru/go.iron/config"
+	"github.com/iron-io/go.iron/api"
+	"github.com/iron-io/go.iron/config"
 )
 
 type Worker struct {
