@@ -4,7 +4,6 @@ package api
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -150,21 +149,21 @@ func ResponseAsError(response *http.Response) (err error) {
 
 	desc, found := HTTPErrorDescriptions[response.StatusCode]
 	if found {
-		return Error{Response: response, Error: response.Status + desc}
+		return Error{Response: response, Message: response.Status + desc}
 	}
 
 	out := map[string]interface{}{}
 	json.NewDecoder(response.Body).Decode(&out)
 	if msg, ok := out["msg"]; ok {
-		return errors.New(fmt.Sprint(msg))
+		return Error{Response: response, Message: fmt.Sprint(msg)}
 	}
 
-	return errors.New(response.Status + ": Unknown API Response")
+	return Error{Response: response, Message: response.Status + ": Unknown API Response"}
 }
 
-type HTTPError struct {
-	Response int
-	Error    string
+type Error struct {
+	Response *http.Response
+	Message  string
 }
 
-func (h HTTPError) Error() string { return h.Error }
+func (h Error) Error() string { return h.Message }
