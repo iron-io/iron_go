@@ -119,6 +119,23 @@ func (w *Worker) WaitForTask(taskId string) chan TaskInfo {
 	return out
 }
 
+func (w *Worker) WaitForTaskLog(taskId string) chan []byte {
+	out := make(chan []byte)
+	go func() {
+		defer close(out)
+		for {
+			log, err := w.TaskLog(taskId)
+			if err != nil {
+				println(err.Error())
+				return
+			}
+			out <- log
+			return
+		}
+	}()
+	return out
+}
+
 func clamp(value, min, max int) int {
 	if value < min {
 		return min
