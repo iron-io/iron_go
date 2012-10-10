@@ -100,10 +100,10 @@ func NewGoCodePackage(codeName string, packageArgs ...string) (code Code, err er
 func (w *Worker) WaitForTask(taskId string) chan TaskInfo {
 	out := make(chan TaskInfo)
 	go func() {
+		defer close(out)
 		for {
 			info, err := w.TaskInfo(taskId)
 			if err != nil {
-				close(out)
 				return
 			}
 
