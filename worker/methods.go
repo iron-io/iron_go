@@ -13,31 +13,33 @@ import (
 )
 
 type Schedule struct {
-	CodeName string         `json:"code_name"`
-	Name     string         `json:"name"`
-	Payload  string         `json:"payload"`
-	Delay    *time.Duration `json:"delay"`
-	Priority *int           `json:"priority"`
-	RunEvery *int           `json:"run_every"`
-	RunTimes *int           `json:"run_times"`
-	StartAt  *time.Time     `json:"start_at"`
-	EndAt    *time.Time     `json:"end_at"`
+	CodeName       string         `json:"code_name"`
+	Delay          *time.Duration `json:"delay"`
+	EndAt          *time.Time     `json:"end_at"`
+	MaxConcurrency *int           `json:"max_concurrency"`
+	Name           string         `json:"name"`
+	Payload        string         `json:"payload"`
+	Priority       *int           `json:"priority"`
+	RunEvery       *int           `json:"run_every"`
+	RunTimes       *int           `json:"run_times"`
+	StartAt        *time.Time     `json:"start_at"`
 }
 
 type ScheduleInfo struct {
-	CodeName    string    `json:"code_name"`
-	Id          string    `json:"id"`
-	Msg         string    `json:"msg"`
-	ProjectId   string    `json:"project_id"`
-	Status      string    `json:"status"`
-	RunCount    int       `json:"run_count"`
-	RunTimes    int       `json:"run_times"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	NextStart   time.Time `json:"next_start"`
-	LastRunTime time.Time `json:"last_run_time"`
-	StartAt     time.Time `json:"start_at"`
-	EndAt       time.Time `json:"end_at"`
+	CodeName       string    `json:"code_name"`
+	CreatedAt      time.Time `json:"created_at"`
+	EndAt          time.Time `json:"end_at"`
+	Id             string    `json:"id"`
+	LastRunTime    time.Time `json:"last_run_time"`
+	MaxConcurrency int       `json:"max_concurrency"`
+	Msg            string    `json:"msg"`
+	NextStart      time.Time `json:"next_start"`
+	ProjectId      string    `json:"project_id"`
+	RunCount       int       `json:"run_count"`
+	RunTimes       int       `json:"run_times"`
+	StartAt        time.Time `json:"start_at"`
+	Status         string    `json:"status"`
+	UpdatedAt      time.Time `json:"updated_at"`
 }
 
 type Task struct {
@@ -314,6 +316,12 @@ func (w *Worker) Schedule(schedules ...Schedule) (scheduleIds []string, err erro
 		if schedule.Delay != nil {
 			sm["delay"] = (*schedule.Delay).Seconds()
 		}
+		if schedule.EndAt != nil {
+			sm["end_at"] = *schedule.EndAt
+		}
+		if schedule.MaxConcurrency != nil {
+			sm["max_concurrency"] = *schedule.MaxConcurrency
+		}
 		if schedule.Priority != nil {
 			sm["priority"] = *schedule.Priority
 		}
@@ -325,9 +333,6 @@ func (w *Worker) Schedule(schedules ...Schedule) (scheduleIds []string, err erro
 		}
 		if schedule.StartAt != nil {
 			sm["start_at"] = *schedule.StartAt
-		}
-		if schedule.EndAt != nil {
-			sm["end_at"] = *schedule.EndAt
 		}
 		outSchedules = append(outSchedules, sm)
 	}
