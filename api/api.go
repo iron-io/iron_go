@@ -136,27 +136,35 @@ func DumpResponse(response *http.Response) {
 	fmt.Printf("%q\n", out)
 }
 
+var HTTPErrorDescriptions = map[int]string{
+	http.StatusUnauthorized:     "The OAuth token is either not provided or invalid",
+	http.StatusNotFound:         "The resource, project, or endpoint being requested doesn't exist.",
+	http.StatusMethodNotAllowed: "This endpoint doesn't support that particular verb",
+	http.StatusNotAcceptable:    "Required fields are missing",
+}
+
 func ResponseAsError(response *http.Response) (err error) {
-	switch response.StatusCode {
-	case http.StatusOK:
+	if response.StatusCode == http.StatusOK {
 		return nil
-	case http.StatusUnauthorized:
-		return errors.New(response.Status + ": The OAuth token is either not provided or invalid")
-	case http.StatusNotFound:
-		return errors.New(response.Status + ": The resource, project, or endpoint being requested doesn't exist.")
-	case http.StatusMethodNotAllowed:
-		return errors.New(response.Status + ": This endpoint doesn't support that particular verb")
-	case http.StatusNotAcceptable:
-		return errors.New(response.Status + ": Required fields are missing")
-	default:
-		out := map[string]interface{}{}
-		json.NewDecoder(response.Body).Decode(&out)
-		if msg, ok := out["msg"]; ok {
-			return errors.New(fmt.Sprint(msg))
-		} else {
-			return errors.New(response.Status + ": Unknown API Response")
-		}
 	}
 
-	panic("There is no way you'll encounter this")
+	desc, found := HTTPErrorDescriptions[response.StatusCode]
+	if found {
+		return Error{Response: response, Error: response.Status + desc}
+	}
+
+	out := map[string]interface{}{}
+	json.NewDecoder(response.Body).Decode(&out)
+	if msg, ok := out["msg"]; ok {
+		return errors.New(fmt.Sprint(msg))
+	}
+
+	return errors.New(response.Status + ": Unknown API Response")
 }
+
+type HTTPError struct {
+	Response int
+	Error    string
+}
+
+func (h HTTPError) Error() string { return h.Error }
