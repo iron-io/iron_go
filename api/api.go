@@ -142,28 +142,34 @@ var HTTPErrorDescriptions = map[int]string{
 	http.StatusNotAcceptable:    "Required fields are missing",
 }
 
-func ResponseAsError(response *http.Response) (err error) {
+func ResponseAsError(response *http.Response) (err HTTPResponseError) {
 	if response.StatusCode == http.StatusOK {
 		return nil
 	}
 
 	desc, found := HTTPErrorDescriptions[response.StatusCode]
 	if found {
-		return Error{Response: response, Message: response.Status + desc}
+		return resErr{response: response, error: response.Status + ": " + desc}
 	}
 
 	out := map[string]interface{}{}
 	json.NewDecoder(response.Body).Decode(&out)
 	if msg, ok := out["msg"]; ok {
-		return Error{Response: response, Message: fmt.Sprint(msg)}
+		return resErr{response: response, error: fmt.Sprint(response.Status, ":", msg)}
 	}
 
-	return Error{Response: response, Message: response.Status + ": Unknown API Response"}
+	return resErr{response: response, error: response.Status + ": Unknown API Response"}
 }
 
-type Error struct {
-	Response *http.Response
-	Message  string
+type HTTPResponseError interface {
+	Error() string
+	Response() *http.Response
 }
 
-func (h Error) Error() string { return h.Message }
+type resErr struct {
+	error    string
+	response *http.Response
+}
+
+func (h resErr) Error() string            { return h.error }
+func (h resErr) Response() *http.Response { return h.response }
