@@ -23,11 +23,12 @@ func PayloadReader() (io.ReadCloser, error) {
 }
 
 func PayloadFromJSON(v interface{}) error {
-	fd, err := os.Open(*payloadFlag)
+	reader, err := PayloadReader()
 	if err != nil {
 		return err
 	}
-	return json.NewDecoder(fd).Decode(v)
+	defer reader.Close()
+	return json.NewDecoder(reader).Decode(v)
 }
 
 func IronTaskId() string {
