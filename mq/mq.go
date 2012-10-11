@@ -132,6 +132,7 @@ func (q Queue) Get() (msg *Message, err error) {
 	return
 }
 
+// get N messages
 func (q Queue) GetN(n int) (msgs []*Message, err error) {
 	out := struct {
 		Messages []*Message `json:"messages"`
@@ -151,14 +152,37 @@ func (q Queue) GetN(n int) (msgs []*Message, err error) {
 	return out.Messages, nil
 }
 
+// Delete all messages in the queue
 func (q Queue) Clear() (err error) {
 	return q.queues(q.Name, "clear").Req("POST", nil, nil)
 }
 
+// Delete message from queue
 func (q Queue) DeleteMessage(msgId string) (err error) {
 	return q.queues(q.Name, "messages", msgId).Req("DELETE", nil, nil)
 }
 
+// Reset timeout of message to keep it reserved
+func (q Queue) TouchMessage(msgId string) (err error) {
+	return q.queues(q.Name, "messages", msgId, "touch").Req("POST", nil, nil)
+}
+
+// Put message back in the queue
+func (q Queue) ReleaseMessage(msgId string) (err error) {
+	return q.queues(q.Name, "messages", msgId, "release").Req("POST", nil, nil)
+}
+
+// Delete message from queue
 func (m Message) Delete() (err error) {
 	return m.q.DeleteMessage(m.Id)
+}
+
+// Reset timeout of message to keep it reserved
+func (m Message) Touch() (err error) {
+	return m.q.TouchMessage(m.Id)
+}
+
+// Put message back in the queue
+func (m Message) Release() (err error) {
+	return m.q.Release(m.Id)
 }
