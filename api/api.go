@@ -58,9 +58,13 @@ func (u *URL) Req(method string, in, out interface{}) (err error) {
 		reqBody = bytes.NewBuffer(data)
 	}
 	response, err := u.Request(method, reqBody)
+	if response != nil {
+		defer response.Body.Close()
+	}
 	if err == nil && out != nil {
 		return json.NewDecoder(response.Body).Decode(out)
 	}
+
 	return
 }
 
