@@ -167,9 +167,12 @@ func (q Queue) TouchMessage(msgId string) (err error) {
 	return q.queues(q.Name, "messages", msgId, "touch").Req("POST", nil, nil)
 }
 
-// Put message back in the queue
-func (q Queue) ReleaseMessage(msgId string) (err error) {
-	return q.queues(q.Name, "messages", msgId, "release").Req("POST", nil, nil)
+// Put message back in the queue, message will be available after +delay+ seconds.
+func (q Queue) ReleaseMessage(msgId string, delay int64) (err error) {
+	in := struct {
+		Delay int64 `json:"messages"`
+	}{Delay: delay}
+	return q.queues(q.Name, "messages", msgId, "release").Req("POST", &in, nil)
 }
 
 // Delete message from queue
@@ -182,7 +185,7 @@ func (m Message) Touch() (err error) {
 	return m.q.TouchMessage(m.Id)
 }
 
-// Put message back in the queue
-func (m Message) Release() (err error) {
-	return m.q.Release(m.Id)
+// Put message back in the queue, message will be available after +delay+ seconds.
+func (m Message) Release(delay int64) (err error) {
+	return m.q.ReleaseMessage(m.Id, delay)
 }
