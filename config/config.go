@@ -31,21 +31,21 @@ var (
 			Port:       443,
 			ApiVersion: "2",
 			Host:       "worker-aws-us-east-1.iron.io",
-			UserAgent:  "go.iron/worker 2.0 (Go " + goVersion + ")",
+			UserAgent:  "iron_go/worker 2.0 (Go " + goVersion + ")",
 		},
 		"mq": Settings{
 			Scheme:     "https",
 			Port:       443,
 			ApiVersion: "1",
 			Host:       "mq-aws-us-east-1.iron.io",
-			UserAgent:  "go.iron/mq 1.0 (Go " + goVersion + ")",
+			UserAgent:  "iron_go/mq 1.0 (Go " + goVersion + ")",
 		},
 		"cache": Settings{
 			Scheme:     "https",
 			Port:       443,
 			ApiVersion: "1",
 			Host:       "cache-aws-us-east-1.iron.io",
-			UserAgent:  "go.iron/cache 1.0 (Go " + goVersion + ")",
+			UserAgent:  "iron_go/cache 1.0 (Go " + goVersion + ")",
 		},
 	}
 )
@@ -77,7 +77,7 @@ func Config(fullProduct string) (settings Settings) {
 			Port:       443,
 			ApiVersion: "1",
 			Host:       product + "-aws-us-east-1.iron.io",
-			UserAgent:  "go.iron",
+			UserAgent:  "iron_go",
 		}
 	}
 

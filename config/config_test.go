@@ -1,7 +1,7 @@
 package config_test
 
 import (
-	"github.com/iron-io/go.iron/config"
+	"github.com/iron-io/iron_go/config"
 	. "github.com/sdegutis/go.bdd"
 	"testing"
 )

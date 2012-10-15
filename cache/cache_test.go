@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/iron-io/go.iron/cache"
+	"github.com/iron-io/iron_go/cache"
 	. "github.com/sdegutis/go.bdd"
 )
 
