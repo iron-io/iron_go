@@ -13,9 +13,14 @@ type Queue struct {
 }
 
 type QueueInfo struct {
-	TotalMessages int    `json:"total_messages"`
-	Name          string `json:"queuename"`
-	Size          int    `json:"size"`
+	Id              string   `json:"id,omitempty"`
+	Name            string   `json:"name,omitempty"`
+	Size            uint64   `json:"size,omitempty"`
+	Reserved        uint64   `json:"reserved,omitempty"`
+	TotalMessages   uint64   `json:"total_messages,omitempty"`
+	MaxReqPerMinute uint64   `json:"max_req_per_minute,omitempty"`
+	Subscriptions   []string `json:"subscriptions,omitempty"`
+	PushType        string   `json:"push_type,omitempty"`
 }
 
 type Message struct {
@@ -27,7 +32,11 @@ type Message struct {
 	// Delay is the amount of time in seconds to wait before adding the message
 	// to the queue.
 	Delay int64 `json:"delay,omitempty"`
-	q     Queue
+	// one of "worker" or "pub/sub"
+	PushType string `json:"push_type,omitempty"`
+	// list of urls to push the message to.
+	Subscriptions []string `json:"subscriptions,omitempty"`
+	q             Queue
 }
 
 func New(queueName string) *Queue {
@@ -35,6 +44,15 @@ func New(queueName string) *Queue {
 }
 
 func (q Queue) queues(s ...string) *api.URL { return api.Action(q.Settings, "queues", s...) }
+
+func (q Queue) Subscribe(pushType string, subscriptions ...string) (err error) {
+	in := QueueInfo{
+		Name:          q.Name,
+		PushType:      pushType,
+		Subscriptions: subscriptions,
+	}
+	return q.queues().Req("POST", &in, nil)
+}
 
 func (q Queue) ListQueues(page, perPage int) (queues []Queue, err error) {
 	out := []struct {
