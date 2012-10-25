@@ -1,3 +1,4 @@
+// IronMQ (elastic message queue) client library
 package mq
 
 import (
@@ -15,10 +16,10 @@ type Queue struct {
 type QueueInfo struct {
 	Id              string   `json:"id,omitempty"`
 	Name            string   `json:"name,omitempty"`
-	Size            uint64   `json:"size,omitempty"`
-	Reserved        uint64   `json:"reserved,omitempty"`
-	TotalMessages   uint64   `json:"total_messages,omitempty"`
-	MaxReqPerMinute uint64   `json:"max_req_per_minute,omitempty"`
+	Size            int      `json:"size,omitempty"`
+	Reserved        int      `json:"reserved,omitempty"`
+	TotalMessages   int      `json:"total_messages,omitempty"`
+	MaxReqPerMinute int      `json:"max_req_per_minute,omitempty"`
 	Subscriptions   []string `json:"subscriptions,omitempty"`
 	PushType        string   `json:"push_type,omitempty"`
 }

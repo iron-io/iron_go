@@ -7,30 +7,50 @@ import (
 
 var p = fmt.Println
 
+func assert(b bool, msg ...interface{}) {
+	if !b {
+		panic(fmt.Sprintln(msg...))
+	}
+}
+
 func Example1PushingMessagesToTheQueue() {
-	// use the test_queue to push/get messages
+	// use a queue named "test_queue" to push/get messages
 	q := mq.New("test_queue")
 
-	q.PushString("Hello, World!")
+	total := 0
+
+	id, err := q.PushString("Hello, World!")
+	assert(err == nil, err)
+	assert(len(id) > 1, len(id))
+	total++
 
 	// You can also pass multiple messages in a single call.
-	q.PushStrings("Message 1", "Message 2")
+	ids, err := q.PushStrings("Message 1", "Message 2")
+	assert(err == nil, err)
+	assert(len(ids) == 2, len(ids))
+	total += len(ids)
 
 	// To control parameters like timeout and delay, construct your own message.
-	q.PushMessage(&mq.Message{Timeout: 60, Delay: 0, Body: "Hi there"})
+	id, err = q.PushMessage(&mq.Message{Timeout: 60, Delay: 0, Body: "Hi there"})
+	assert(err == nil, err)
+	assert(len(id) > 10, len(id))
+	total++
 
 	// And finally, all that can be done in bulk as well.
-	q.PushMessages(
+	ids, err = q.PushMessages(
 		&mq.Message{Timeout: 60, Delay: 0, Body: "The first"},
 		&mq.Message{Timeout: 60, Delay: 1, Body: "The second"},
 		&mq.Message{Timeout: 60, Delay: 2, Body: "The third"},
 		&mq.Message{Timeout: 60, Delay: 3, Body: "The fifth"},
 	)
+	assert(err == nil, err)
+	assert(len(ids) == 4, len(ids))
+	total += len(ids)
 
-	p("all pushed")
+	p("pushed a total of", total, "messages")
 
 	// Output:
-	// all pushed
+	// pushed a total of 8 messages
 }
 
 func Example2GettingMessagesOffTheQueue() {
@@ -38,12 +58,15 @@ func Example2GettingMessagesOffTheQueue() {
 
 	// get a single message
 	msg, err := q.Get()
-	p(err)
-	p(msg.Body)
+	assert(err == nil, err)
+	fmt.Sprintf("The message says: %q\n", msg.Body)
+
+	// when we're done handling a message, we have to delete it, or it
+	// will be put back into the queue after a timeout.
 
 	// get 5 messages
 	msgs, err := q.GetN(5)
-	p(err)
+	assert(err == nil, err)
 	p(len(msgs))
 
 	for _, m := range append(msgs, msg) {
@@ -61,9 +84,11 @@ func Example3DeleteMessagesFromTheQueue() {
 	q := mq.New("test_queue")
 	msg, err := q.Get()
 	p(err)
-	msg.Delete()
+	err = msg.Delete()
+	p(err)
 
 	// Output:
+	// <nil>
 	// <nil>
 }
 

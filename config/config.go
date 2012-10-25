@@ -1,3 +1,4 @@
+// config helper for cache, mq, and worker
 package config
 
 import (
@@ -12,6 +13,8 @@ import (
 	"strings"
 )
 
+// Contains the configuration for an iron.io service.
+// An empty instance is not usable
 type Settings struct {
 	Token      string `json:"token,omitempty"`
 	ProjectId  string `json:"project_id,omitempty"`
@@ -25,7 +28,7 @@ type Settings struct {
 var (
 	debug     = false
 	goVersion = runtime.Version()
-	presets   = map[string]Settings{
+	Presets   = map[string]Settings{
 		"worker": Settings{
 			Scheme:     "https",
 			Port:       443,
@@ -56,8 +59,8 @@ func dbg(v ...interface{}) {
 	}
 }
 
-// fullProduct is like "iron_worker" and "iron_mq", not "worker" or "mq", to
-// keep some flexibility in future.
+// Config gathers configuration from env variables and json config files.
+// Examples of fullProduct are "iron_worker", "iron_cache", "iron_mq".
 func Config(fullProduct string) (settings Settings) {
 	if os.Getenv("IRON_CONFIG_DEBUG") != "" {
 		debug = true
@@ -69,7 +72,7 @@ func Config(fullProduct string) (settings Settings) {
 	}
 	family, product := pair[0], pair[1]
 
-	base, found := presets[product]
+	base, found := Presets[product]
 
 	if !found {
 		base = Settings{
@@ -149,6 +152,7 @@ func (s *Settings) commonEnv(prefix string) {
 	}
 }
 
+// Load and merge the given JSON config file.
 func (s *Settings) UseConfigFile(family, product, path string) {
 	content, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -172,6 +176,7 @@ func (s *Settings) UseConfigFile(family, product, path string) {
 	}
 }
 
+// Merge the given data into the settings.
 func (s *Settings) UseConfigMap(data map[string]interface{}) {
 	if token, found := data["token"]; found {
 		s.Token = token.(string)

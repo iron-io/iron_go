@@ -1,4 +1,4 @@
-// client for the IronCache REST API
+// IronCache (cloud k/v store) client library
 package cache
 
 import (

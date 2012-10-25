@@ -1,4 +1,4 @@
-// A library to talk with IronWorker (iron.io)
+// IronWorker (elastic computing) client library
 package worker
 
 import (

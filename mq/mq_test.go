@@ -14,29 +14,13 @@ func init() {
 	defer PrintSpecReport()
 
 	Describe("IronMQ", func() {
-		It("Lists all queues", func() {
-			c := mq.New("queuename")
-			_, err := c.ListQueues(0, 100) // can't check the caches value just yet.
-			Expect(err, ToBeNil)
-		})
-
 		It("Deletes all existing messages", func() {
 			c := mq.New("queuename")
+			Expect(c.Clear(), ToBeNil)
 
-			for {
-				info, err := c.Info()
-				if err != nil || info.Size == 0 {
-					break
-				}
-
-				msgs, err := c.GetN(info.Size)
-				Expect(err, ToBeNil)
-
-				for _, msg := range msgs {
-					err = c.DeleteMessage(msg.Id)
-					Expect(err, ToBeNil)
-				}
-			}
+			info, err := c.Info()
+			Expect(err, ToBeNil)
+			Expect(info.Size, ToEqual, 0x0)
 		})
 
 		It("Pushes ands gets a message", func() {
@@ -68,12 +52,25 @@ func init() {
 			Expect(err, ToBeNil)
 			Expect(info.Size, ToEqual, 100)
 
-			err = q.Clear()
-			Expect(err, ToBeNil)
+			Expect(q.Clear(), ToBeNil)
 
 			info, err = q.Info()
 			Expect(err, ToBeNil)
 			Expect(info.Size, ToEqual, 0)
+		})
+
+		It("Lists all queues", func() {
+			c := mq.New("queuename")
+			queues, err := c.ListQueues(0, 100) // can't check the caches value just yet.
+			Expect(err, ToBeNil)
+			found := false
+			for _, queue := range queues {
+				if queue.Name == "queuename" {
+					found = true
+					break
+				}
+			}
+			Expect(found, ToEqual, true)
 		})
 	})
 }
