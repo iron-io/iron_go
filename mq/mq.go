@@ -46,15 +46,6 @@ func New(queueName string) *Queue {
 
 func (q Queue) queues(s ...string) *api.URL { return api.Action(q.Settings, "queues", s...) }
 
-func (q Queue) Subscribe(pushType string, subscriptions ...string) (err error) {
-	in := QueueInfo{
-		Name:          q.Name,
-		PushType:      pushType,
-		Subscriptions: subscriptions,
-	}
-	return q.queues().Req("POST", &in, nil)
-}
-
 func (q Queue) ListQueues(page, perPage int) (queues []Queue, err error) {
 	out := []struct {
 		Id         string
@@ -85,6 +76,14 @@ func (q Queue) Info() (QueueInfo, error) {
 	qi := QueueInfo{}
 	err := q.queues(q.Name).Req("GET", nil, &qi)
 	return qi, err
+}
+
+func (q Queue) Subscribe(pushType string, subscriptions ...string) (err error) {
+	in := QueueInfo{
+		PushType:      pushType,
+		Subscriptions: subscriptions,
+	}
+	return q.queues(q.Name).Req("POST", &in, nil)
 }
 
 func (q Queue) PushString(body string) (id string, err error) {
