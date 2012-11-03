@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -19,6 +20,23 @@ import (
 type URL struct {
 	URL      url.URL
 	Settings config.Settings
+}
+
+var (
+	debug bool
+)
+
+func dbg(v ...interface{}) {
+	if debug {
+		fmt.Fprintln(os.Stderr, v...)
+	}
+}
+
+func init() {
+	if os.Getenv("IRON_API_DEBUG") != "" {
+		debug = true
+		dbg("debugging of api enabled")
+	}
 }
 
 func Action(cs config.Settings, prefix string, suffix ...string) *URL {
@@ -62,7 +80,8 @@ func (u *URL) Req(method string, in, out interface{}) (err error) {
 		defer response.Body.Close()
 	}
 	if err == nil && out != nil {
-		return json.NewDecoder(response.Body).Decode(out)
+		err = json.NewDecoder(response.Body).Decode(out)
+		dbg("u:", u, "out:", fmt.Sprintf("%#v\n", out))
 	}
 
 	return
@@ -96,6 +115,8 @@ func (u *URL) Request(method string, body io.Reader) (response *http.Response, e
 	if body != nil {
 		request.Header.Set("Content-Type", "application/json")
 	}
+
+	dbg("request:", fmt.Sprintf("%#v\n", request))
 
 	for tries := 0; tries <= MaxRequestRetries; tries++ {
 		request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
