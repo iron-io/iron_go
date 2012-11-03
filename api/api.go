@@ -131,6 +131,7 @@ func (u *URL) Request(method string, body io.Reader) (response *http.Response, e
 		if response.StatusCode == http.StatusServiceUnavailable {
 			delay := (tries + 1) * 10 // smooth out delays from 0-2
 			time.Sleep(time.Duration(delay*delay) * time.Millisecond)
+			continue
 		}
 
 		break
