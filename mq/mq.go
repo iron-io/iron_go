@@ -3,7 +3,6 @@ package mq
 
 import (
 	"errors"
-	"log"
 	"time"
 
 	"github.com/iron-io/iron_go/api"
