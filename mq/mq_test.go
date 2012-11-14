@@ -1,9 +1,10 @@
 package mq_test
 
 import (
-	"testing"
-
 	"fmt"
+	"testing"
+	"time"
+
 	"github.com/iron-io/iron_go/mq"
 	. "github.com/sdegutis/go.bdd"
 )
@@ -71,6 +72,28 @@ func init() {
 				}
 			}
 			Expect(found, ToEqual, true)
+		})
+
+		It("releases a message", func() {
+			c := mq.New("queuename")
+
+			id, err := c.PushString("trying")
+			Expect(err, ToBeNil)
+
+			msg, err := c.Get()
+			Expect(err, ToBeNil)
+
+			err = msg.Release(3)
+			Expect(err, ToBeNil)
+
+			msg, err = c.Get()
+			Expect(msg, ToEqual, nil)
+
+			time.Sleep(3)
+
+			msg, err = c.Get()
+			Expect(err, ToBeNil)
+			Expect(msg.Id, ToEqual, id)
 		})
 	})
 }

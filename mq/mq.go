@@ -205,7 +205,7 @@ func (q Queue) TouchMessage(msgId string) (err error) {
 // Put message back in the queue, message will be available after +delay+ seconds.
 func (q Queue) ReleaseMessage(msgId string, delay int64) (err error) {
 	in := struct {
-		Delay int64 `json:"messages"`
+		Delay int64 `json:"delay"`
 	}{Delay: delay}
 	return q.queues(q.Name, "messages", msgId, "release").Req("POST", &in, nil)
 }
