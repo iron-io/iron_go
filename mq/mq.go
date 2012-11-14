@@ -3,6 +3,7 @@ package mq
 
 import (
 	"errors"
+	"log"
 	"time"
 
 	"github.com/iron-io/iron_go/api"
@@ -39,6 +40,19 @@ type Message struct {
 	// to the queue.
 	Delay int64 `json:"delay,omitempty"`
 	q     Queue
+}
+
+type PushStatus struct {
+	Retried    int    `json:"retried"`
+	StatusCode int    `json:"status_code"`
+	Status     string `json:"status"`
+}
+
+type Subscriber struct {
+	Retried    int               `json:"retried"`
+	StatusCode int               `json:"status_code"`
+	Status     string            `json:"status"`
+	URLs       []QueueSubscriber `json:"urls"`
 }
 
 func New(queueName string) *Queue {
@@ -197,21 +211,6 @@ func (q Queue) ReleaseMessage(msgId string, delay int64) (err error) {
 	return q.queues(q.Name, "messages", msgId, "release").Req("POST", &in, nil)
 }
 
-type PushStatus struct {
-	Retried    int    `json:"retried"`
-	StatusCode int    `json:"status_code"`
-	Status     string `json:"status"`
-}
-
-type Subscriber struct {
-	Body          string            `json:"body"`
-	CorrelationId string            `json:"correlation_id"`
-	Id            string            `json:"id"`
-	PushStatus    PushStatus        `json:"push_status"`
-	PushType      string            `json:"push_type"`
-	URLs          []QueueSubscriber `json:"urls"`
-}
-
 func (q Queue) MessageSubscribers(msgId string) ([]*Subscriber, error) {
 	out := struct {
 		Subscribers []*Subscriber `json:"subscribers"`
@@ -237,8 +236,7 @@ func (q Queue) MessageSubscribersPollN(msgId string, n int) ([]*Subscriber, erro
 
 func actualPushStatus(subs []*Subscriber) bool {
 	for _, sub := range subs {
-		ps := sub.PushStatus
-		if ps.StatusCode == -1 {
+		if sub.Status == "queued" {
 			return false
 		}
 	}
