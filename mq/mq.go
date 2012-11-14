@@ -3,6 +3,7 @@ package mq
 
 import (
 	"errors"
+	"time"
 
 	"github.com/iron-io/iron_go/api"
 	"github.com/iron-io/iron_go/config"
@@ -203,13 +204,12 @@ type PushStatus struct {
 }
 
 type Subscriber struct {
-	Body          string     `json:"body"`
-	CorrelationId string     `json:"correlation_id"`
-	Id            string     `json:"id"`
-	PushStatus    PushStatus `json:"push_status"`
-	PushType      string     `json:"push_type"`
-	URLs          []string   `json:"urls"`
-	Timeout       int        `json:"timeout"`
+	Body          string            `json:"body"`
+	CorrelationId string            `json:"correlation_id"`
+	Id            string            `json:"id"`
+	PushStatus    PushStatus        `json:"push_status"`
+	PushType      string            `json:"push_type"`
+	URLs          []QueueSubscriber `json:"urls"`
 }
 
 func (q Queue) MessageSubscribers(msgId string) ([]*Subscriber, error) {
@@ -218,6 +218,32 @@ func (q Queue) MessageSubscribers(msgId string) ([]*Subscriber, error) {
 	}{}
 	err := q.queues(q.Name, "messages", msgId, "subscribers").Req("GET", nil, &out)
 	return out.Subscribers, err
+}
+
+func (q Queue) MessageSubscribersPollN(msgId string, n int) ([]*Subscriber, error) {
+	subs, err := q.MessageSubscribers(msgId)
+	for {
+		time.Sleep(100 * time.Millisecond)
+		subs, err = q.MessageSubscribers(msgId)
+		if err != nil {
+			return subs, err
+		}
+		if len(subs) >= n && actualPushStatus(subs) {
+			return subs, nil
+		}
+	}
+	return subs, err
+}
+
+func actualPushStatus(subs []*Subscriber) bool {
+	for _, sub := range subs {
+		ps := sub.PushStatus
+		if ps.StatusCode == -1 {
+			return false
+		}
+	}
+
+	return true
 }
 
 // Delete message from queue
