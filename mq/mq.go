@@ -13,15 +13,19 @@ type Queue struct {
 	Name     string
 }
 
+type QueueSubscriber struct {
+	URL string `json:"url"`
+}
+
 type QueueInfo struct {
-	Id              string   `json:"id,omitempty"`
-	Name            string   `json:"name,omitempty"`
-	Size            int      `json:"size,omitempty"`
-	Reserved        int      `json:"reserved,omitempty"`
-	TotalMessages   int      `json:"total_messages,omitempty"`
-	MaxReqPerMinute int      `json:"max_req_per_minute,omitempty"`
-	Subscriptions   []string `json:"subscriptions,omitempty"`
-	PushType        string   `json:"push_type,omitempty"`
+	Id              string            `json:"id,omitempty"`
+	Name            string            `json:"name,omitempty"`
+	Size            int               `json:"size,omitempty"`
+	Reserved        int               `json:"reserved,omitempty"`
+	TotalMessages   int               `json:"total_messages,omitempty"`
+	MaxReqPerMinute int               `json:"max_req_per_minute,omitempty"`
+	Subscribers     []QueueSubscriber `json:"subscribers,omitempty"`
+	PushType        string            `json:"push_type,omitempty"`
 }
 
 type Message struct {
@@ -33,11 +37,7 @@ type Message struct {
 	// Delay is the amount of time in seconds to wait before adding the message
 	// to the queue.
 	Delay int64 `json:"delay,omitempty"`
-	// one of "worker" or "pub/sub"
-	PushType string `json:"push_type,omitempty"`
-	// list of urls to push the message to.
-	Subscriptions []string `json:"subscriptions,omitempty"`
-	q             Queue
+	q     Queue
 }
 
 func New(queueName string) *Queue {
@@ -78,10 +78,13 @@ func (q Queue) Info() (QueueInfo, error) {
 	return qi, err
 }
 
-func (q Queue) Subscribe(pushType string, subscriptions ...string) (err error) {
+func (q Queue) Subscribe(pushType string, subscribers ...string) (err error) {
 	in := QueueInfo{
-		PushType:      pushType,
-		Subscriptions: subscriptions,
+		PushType:    pushType,
+		Subscribers: make([]QueueSubscriber, len(subscribers)),
+	}
+	for i, subscriber := range subscribers {
+		in.Subscribers[i].URL = subscriber
 	}
 	return q.queues(q.Name).Req("POST", &in, nil)
 }
@@ -193,6 +196,30 @@ func (q Queue) ReleaseMessage(msgId string, delay int64) (err error) {
 	return q.queues(q.Name, "messages", msgId, "release").Req("POST", &in, nil)
 }
 
+type PushStatus struct {
+	Retried    int    `json:"retried"`
+	StatusCode int    `json:"status_code"`
+	Status     string `json:"status"`
+}
+
+type Subscriber struct {
+	Body          string     `json:"body"`
+	CorrelationId string     `json:"correlation_id"`
+	Id            string     `json:"id"`
+	PushStatus    PushStatus `json:"push_status"`
+	PushType      string     `json:"push_type"`
+	URLs          []string   `json:"urls"`
+	Timeout       int        `json:"timeout"`
+}
+
+func (q Queue) MessageSubscribers(msgId string) ([]*Subscriber, error) {
+	out := struct {
+		Subscribers []*Subscriber `json:"subscribers"`
+	}{}
+	err := q.queues(q.Name, "messages", msgId, "subscribers").Req("GET", nil, &out)
+	return out.Subscribers, err
+}
+
 // Delete message from queue
 func (m Message) Delete() (err error) {
 	return m.q.DeleteMessage(m.Id)
@@ -206,4 +233,8 @@ func (m Message) Touch() (err error) {
 // Put message back in the queue, message will be available after +delay+ seconds.
 func (m Message) Release(delay int64) (err error) {
 	return m.q.ReleaseMessage(m.Id, delay)
+}
+
+func (m Message) Subscribers() (interface{}, error) {
+	return m.q.MessageSubscribers(m.Id)
 }

@@ -39,9 +39,9 @@ func Example1PushingMessagesToTheQueue() {
 	// And finally, all that can be done in bulk as well.
 	ids, err = q.PushMessages(
 		&mq.Message{Timeout: 60, Delay: 0, Body: "The first"},
-		&mq.Message{Timeout: 60, Delay: 1, Body: "The second"},
-		&mq.Message{Timeout: 60, Delay: 2, Body: "The third"},
-		&mq.Message{Timeout: 60, Delay: 3, Body: "The fifth"},
+		&mq.Message{Timeout: 60, Delay: 0, Body: "The second"},
+		&mq.Message{Timeout: 60, Delay: 0, Body: "The third"},
+		&mq.Message{Timeout: 60, Delay: 0, Body: "The fifth"},
 	)
 	assert(err == nil, err)
 	assert(len(ids) == 4, len(ids))
@@ -59,7 +59,7 @@ func Example2GettingMessagesOffTheQueue() {
 	// get a single message
 	msg, err := q.Get()
 	assert(err == nil, err)
-	fmt.Sprintf("The message says: %q\n", msg.Body)
+	fmt.Printf("The message says: %q\n", msg.Body)
 
 	// when we're done handling a message, we have to delete it, or it
 	// will be put back into the queue after a timeout.
@@ -67,32 +67,18 @@ func Example2GettingMessagesOffTheQueue() {
 	// get 5 messages
 	msgs, err := q.GetN(5)
 	assert(err == nil, err)
-	p(len(msgs))
+	fmt.Println("Got", len(msgs), "messages from", q.Name)
 
 	for _, m := range append(msgs, msg) {
 		m.Delete()
 	}
 
 	// Output:
-	// <nil>
-	// Hello, World!
-	// <nil>
-	// 5
+	// The message says: "Hello, World!"
+	// Got 5 messages from test_queue
 }
 
-func Example3DeleteMessagesFromTheQueue() {
-	q := mq.New("test_queue")
-	msg, err := q.Get()
-	p(err)
-	err = msg.Delete()
-	p(err)
-
-	// Output:
-	// <nil>
-	// <nil>
-}
-
-func Example4ClearQueue() {
+func Example3ClearQueue() {
 	q := mq.New("test_queue")
 
 	info, err := q.Info()
@@ -110,7 +96,7 @@ func Example4ClearQueue() {
 
 	// Output:
 	// <nil>
-	// Before Clean(); Name: test_queue Size: 1
+	// Before Clean(); Name: test_queue Size: 2
 	// <nil>
 	// <nil>
 	// After  Clean(); Name: test_queue Size: 0
