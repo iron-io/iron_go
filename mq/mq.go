@@ -48,10 +48,10 @@ type PushStatus struct {
 }
 
 type Subscriber struct {
-	Retried    int               `json:"retried"`
-	StatusCode int               `json:"status_code"`
-	Status     string            `json:"status"`
-	URLs       []QueueSubscriber `json:"urls"`
+	Retried    int    `json:"retried"`
+	StatusCode int    `json:"status_code"`
+	Status     string `json:"status"`
+	URL        string `json:"url"`
 }
 
 func New(queueName string) *Queue {
