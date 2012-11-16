@@ -41,8 +41,8 @@ func Example2Incrementing() {
 	// Output:
 	// <nil>
 	// 52 <nil>
-	// Cannot increment or decrement non-numeric value
-	// Cannot increment or decrement non-numeric value
+	// 400 Bad Request: Cannot increment or decrement non-numeric value
+	// 400 Bad Request: Cannot increment or decrement non-numeric value
 }
 
 func Example3Decrementing() {
@@ -58,8 +58,8 @@ func Example3Decrementing() {
 	// Output:
 	// <nil>
 	// 42 <nil>
-	// Cannot increment or decrement non-numeric value
-	// Cannot increment or decrement non-numeric value
+	// 400 Bad Request: Cannot increment or decrement non-numeric value
+	// 400 Bad Request: Cannot increment or decrement non-numeric value
 }
 
 func Example4RetrievingData() {
