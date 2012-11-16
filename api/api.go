@@ -181,7 +181,7 @@ func ResponseAsError(response *http.Response) (err HTTPResponseError) {
 	out := map[string]interface{}{}
 	json.NewDecoder(response.Body).Decode(&out)
 	if msg, ok := out["msg"]; ok {
-		return resErr{response: response, error: fmt.Sprint(response.Status, ":", msg)}
+		return resErr{response: response, error: fmt.Sprint(response.Status, ": ", msg)}
 	}
 
 	return resErr{response: response, error: response.Status + ": Unknown API Response"}
