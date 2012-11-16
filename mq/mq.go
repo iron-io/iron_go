@@ -19,14 +19,15 @@ type QueueSubscriber struct {
 }
 
 type QueueInfo struct {
-	Id              string            `json:"id,omitempty"`
-	Name            string            `json:"name,omitempty"`
-	Size            int               `json:"size,omitempty"`
-	Reserved        int               `json:"reserved,omitempty"`
-	TotalMessages   int               `json:"total_messages,omitempty"`
-	MaxReqPerMinute int               `json:"max_req_per_minute,omitempty"`
-	Subscribers     []QueueSubscriber `json:"subscribers,omitempty"`
-	PushType        string            `json:"push_type,omitempty"`
+	Id            string            `json:"id,omitempty"`
+	Name          string            `json:"name,omitempty"`
+	PushType      string            `json:"push_type,omitempty"`
+	Reserved      int               `json:"reserved,omitempty"`
+	RetriesDelay  int               `json:"retries,omitempty"`
+	Retries       int               `json:"retries_delay,omitempty"`
+	Size          int               `json:"size,omitempty"`
+	Subscribers   []QueueSubscriber `json:"subscribers,omitempty"`
+	TotalMessages int               `json:"total_messages,omitempty"`
 }
 
 type Message struct {
@@ -92,10 +93,18 @@ func (q Queue) Info() (QueueInfo, error) {
 	return qi, err
 }
 
-func (q Queue) Subscribe(pushType string, subscribers ...string) (err error) {
+type Subscription struct {
+	PushType     string
+	Retries      int
+	RetriesDelay int
+}
+
+func (q Queue) Subscribe(subscription Subscription, subscribers ...string) (err error) {
 	in := QueueInfo{
-		PushType:    pushType,
-		Subscribers: make([]QueueSubscriber, len(subscribers)),
+		PushType:     subscription.PushType,
+		Retries:      subscription.Retries,
+		RetriesDelay: subscription.RetriesDelay,
+		Subscribers:  make([]QueueSubscriber, len(subscribers)),
 	}
 	for i, subscriber := range subscribers {
 		in.Subscribers[i].URL = subscriber
