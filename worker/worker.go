@@ -25,7 +25,7 @@ func (w *Worker) tasks(s ...string) *api.URL     { return api.Action(w.Settings,
 func (w *Worker) schedules(s ...string) *api.URL { return api.Action(w.Settings, "schedules", s...) }
 
 // exponential sleep between retries, replace this with your own preferred strategy
-var SleepBetweenRetries = func(previousDuration time.Duration) time.Duration {
+func sleepBetweenRetries(previousDuration time.Duration) time.Duration {
 	if previousDuration >= 60*time.Second {
 		return previousDuration
 	}

@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/iron-io/iron_go/mq"
-	. "github.com/sdegutis/go.bdd"
+	. "github.com/jeffh/go.bdd"
 )
 
 func TestEverything(t *testing.T) {}
