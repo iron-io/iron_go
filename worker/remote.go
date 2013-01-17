@@ -7,19 +7,23 @@ import (
 	"os"
 )
 
+
 var (
-	envFlag     = flag.String("e", "", "environment")
-	taskDirFlag = flag.String("d", "", "task dir")
-	payloadFlag = flag.String("payload", "", "payload file")
-	idFlag      = flag.String("id", "", "task id")
+	taskDirFlag string
+	payloadFlag string
+	idFlag      string
 )
 
-func init() {
+// call this to parse flags before using the other methods.
+func ParseFlags() {
+	flag.StringVar(&taskDirFlag, "d", "", "task dir")
+	flag.StringVar(&payloadFlag, "payload", "", "payload file")
+	flag.StringVar(&idFlag, "id", "", "task id")
 	flag.Parse()
 }
 
 func PayloadReader() (io.ReadCloser, error) {
-	return os.Open(*payloadFlag)
+	return os.Open(payloadFlag)
 }
 
 func PayloadFromJSON(v interface{}) error {
@@ -32,9 +36,5 @@ func PayloadFromJSON(v interface{}) error {
 }
 
 func IronTaskId() string {
-	return *idFlag
-}
-
-func IronEnvironment() string {
-	return *envFlag
+	return idFlag
 }
