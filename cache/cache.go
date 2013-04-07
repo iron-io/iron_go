@@ -154,9 +154,17 @@ func (c *Cache) Replace(key string, value ...interface{}) (err error) {
 }
 
 // Increment increments the corresponding item's value.
-func (c *Cache) Increment(key string, amount int64) (err error) {
+func (c *Cache) Increment(key string, amount int64) (value interface{}, err error) {
 	in := map[string]int64{"amount": amount}
-	return c.caches(c.Name, "items", key, "increment").Req("POST", &in, nil)
+
+	out := struct {
+		Message string      `json:"msg"`
+		Value   interface{} `json:"value"`
+	}{}
+	if err = c.caches(c.Name, "items", key, "increment").Req("POST", &in, &out); err == nil {
+		value = out.Value
+	}
+	return
 }
 
 // Get gets an item from the cache.
