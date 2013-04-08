@@ -168,18 +168,22 @@ var HTTPErrorDescriptions = map[int]string{
 	http.StatusNotAcceptable:    "Required fields are missing",
 }
 
-func ResponseAsError(response *http.Response) (err HTTPResponseError) {
+func ResponseAsError(response *http.Response) HTTPResponseError {
 	if response.StatusCode == http.StatusOK {
 		return nil
 	}
 
+	defer response.Body.Close()
 	desc, found := HTTPErrorDescriptions[response.StatusCode]
 	if found {
 		return resErr{response: response, error: response.Status + ": " + desc}
 	}
 
 	out := map[string]interface{}{}
-	json.NewDecoder(response.Body).Decode(&out)
+	err := json.NewDecoder(response.Body).Decode(&out)
+	if err != nil {
+		return resErr{response: response, error: fmt.Sprint(response.Status, ": ", err.Error())}
+	}
 	if msg, ok := out["msg"]; ok {
 		return resErr{response: response, error: fmt.Sprint(response.Status, ": ", msg)}
 	}
