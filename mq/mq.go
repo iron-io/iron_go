@@ -28,6 +28,7 @@ type QueueInfo struct {
 	Size          int               `json:"size,omitempty"`
 	Subscribers   []QueueSubscriber `json:"subscribers,omitempty"`
 	TotalMessages int               `json:"total_messages,omitempty"`
+	ErrorQueue    string            `json:"error_queue,omitempty"`
 }
 
 type Message struct {
