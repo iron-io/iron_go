@@ -52,6 +52,14 @@ func Action(cs config.Settings, prefix string, suffix ...string) *URL {
 	return u
 }
 
+func ActionEndpoint(cs config.Settings, endpoint string) *URL {
+	u := &URL{Settings: cs, URL: url.URL{}}
+	u.URL.Scheme = cs.Scheme
+	u.URL.Host = fmt.Sprintf("%s:%d", url.QueryEscape(cs.Host), cs.Port)
+	u.URL.Path = fmt.Sprintf("/%s/projects/%s/%s", cs.ApiVersion, cs.ProjectId, endpoint)
+	return u
+}
+
 func VersionAction(cs config.Settings) *URL {
 	u := &URL{Settings: cs, URL: url.URL{Scheme: cs.Scheme}}
 	u.URL.Host = fmt.Sprintf("%s:%d", url.QueryEscape(cs.Host), cs.Port)
