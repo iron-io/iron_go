@@ -87,12 +87,12 @@ func (c *Cache) Clear() (err error) {
 // Put adds an Item to the cache, overwriting any existing key of the same name.
 func (c *Cache) Put(key string, item *Item) (err error) {
 	in := struct {
-		Body      interface{} `json:"body"`
+		Value     interface{} `json:"value"`
 		ExpiresIn int         `json:"expires_in,omitempty"`
 		Replace   bool        `json:"replace,omitempty"`
 		Add       bool        `json:"add,omitempty"`
 	}{
-		Body:      item.Value,
+		Value:     item.Value,
 		ExpiresIn: int(item.Expiration.Seconds()),
 		Replace:   item.Replace,
 		Add:       item.Add,
