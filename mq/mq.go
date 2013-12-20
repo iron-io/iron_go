@@ -16,6 +16,7 @@ type Queue struct {
 
 type QueueSubscriber struct {
 	URL string `json:"url"`
+	Headers map[string]string `json:"headers,omitempty"`
 }
 
 type QueueInfo struct {
