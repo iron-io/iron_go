@@ -2,7 +2,7 @@
 	This code sample demonstrates how to get a list of existing tasks
 
 	http://dev.iron.io/worker/reference/api/
-	http://dev.iron.io/worker/reference/api/#list_tasks
+	http://dev.iron.io/worker/reference/api/#get_info_about_a_code_package
 */
 package main
 
