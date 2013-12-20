@@ -56,6 +56,7 @@ func main() {
 	defer resp.Body.Close()
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	// Capture the response

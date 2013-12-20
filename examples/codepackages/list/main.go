@@ -51,6 +51,7 @@ func main() {
 	defer resp.Body.Close()
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	// Check the status code
