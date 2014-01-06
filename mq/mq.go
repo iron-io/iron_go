@@ -15,7 +15,7 @@ type Queue struct {
 }
 
 type QueueSubscriber struct {
-	URL string `json:"url"`
+	URL     string            `json:"url"`
 	Headers map[string]string `json:"headers,omitempty"`
 }
 
@@ -96,8 +96,8 @@ func (q Queue) Info() (QueueInfo, error) {
 }
 
 func (q Queue) Update(qi QueueInfo) (QueueInfo, error) {
-    out := QueueInfo{}
-    err := q.queues(q.Name).Req("POST", qi, &out)
+	out := QueueInfo{}
+	err := q.queues(q.Name).Req("POST", qi, &out)
 	return out, err
 }
 

@@ -99,7 +99,7 @@ func init() {
 		It("updates a queue", func() {
 			c := mq.New("pushqueue")
 			info, err := c.Info()
-			qi := mq.QueueInfo{ PushType: "multicast" }
+			qi := mq.QueueInfo{PushType: "multicast"}
 			rc, err := c.Update(qi)
 			Expect(err, ToBeNil)
 			Expect(info.Id, ToEqual, rc.Id)
