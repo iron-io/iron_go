@@ -95,6 +95,12 @@ func (q Queue) Info() (QueueInfo, error) {
 	return qi, err
 }
 
+func (q Queue) Update(qi QueueInfo) (QueueInfo, error) {
+    out := QueueInfo{}
+    err := q.queues(q.Name).Req("POST", qi, &out)
+	return out, err
+}
+
 type Subscription struct {
 	PushType     string
 	Retries      int
