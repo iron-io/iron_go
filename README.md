@@ -101,3 +101,36 @@ type QueueInfo struct {
 
 --
 
+### Get a Message off a Queue
+
+```go
+// get a single message
+msg, err := q.Get()
+fmt.Printf("The message says: %q\n", msg.Body)
+```
+
+When you pop/get a message from the queue, it is no longer on the queue but it still exists within the system.
+You have to explicitly delete the message or else it will go back onto the queue after the `timeout`.
+The default `timeout` is 60 seconds. Minimal `timeout` is 30 seconds.
+
+You also can get several messages at a time:
+
+```go
+// get 5 messages
+msgs, err := q.GetN(5)
+```
+
+--
+
+### Delete a Message from a Queue
+
+```go
+msg, _ := q.Get()
+// perform some actions with a message here
+msg.Delete()
+```
+
+Be sure to delete a message from the queue when you're done with it.
+
+--
+
