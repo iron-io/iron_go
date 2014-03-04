@@ -53,13 +53,51 @@ for _, element := range queues {
 
 ### Get a Queue Object
 
+You can have as many queues as you want, each with their own unique set of messages.
+
 ```go
-queue = := mq.New("test_queue");
+queue := mq.New("test_queue");
 ```
 
 Now you can use it.
 
 --
 
+### Post a Message on a Queue
 
+Messages are placed on the queue in a FIFO arrangement.
+If a queue does not exist, it will be created upon the first posting of a message.
+
+```go
+id, err := q.PushString("Hello, World!")
+```
+
+--
+
+### Retrieve Queue Information
+
+```go
+info, err := q.Info()
+fmt.Println(info.Name);
+fmt.Println(info.Size);
+```
+
+QueueInfo struct consists of the following fields:
+
+```go
+type QueueInfo struct {
+	Id            string            `json:"id,omitempty"`
+	Name          string            `json:"name,omitempty"`
+	PushType      string            `json:"push_type,omitempty"`
+	Reserved      int               `json:"reserved,omitempty"`
+	RetriesDelay  int               `json:"retries,omitempty"`
+	Retries       int               `json:"retries_delay,omitempty"`
+	Size          int               `json:"size,omitempty"`
+	Subscribers   []QueueSubscriber `json:"subscribers,omitempty"`
+	TotalMessages int               `json:"total_messages,omitempty"`
+	ErrorQueue    string            `json:"error_queue,omitempty"`
+}
+```
+
+--
 
