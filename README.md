@@ -79,6 +79,38 @@ id, err := q.PushString("Hello, World!")
 ```go
 info, err := q.Info()
 fmt.Println(info.Name);
+```
+
+--
+
+### Get a Message off a Queue
+
+```go
+msg, err := q.Get()
+fmt.Printf("The message says: %q\n", msg.Body)
+```
+
+--
+
+### Delete a Message from a Queue
+
+```go
+msg, _ := q.Get()
+// perform some actions with a message here
+msg.Delete()
+```
+
+Be sure to delete a message from the queue when you're done with it.
+
+--
+
+## Queues
+
+### Retrieve Queue Information
+
+```go
+info, err := q.Info()
+fmt.Println(info.Name);
 fmt.Println(info.Size);
 ```
 
@@ -101,10 +133,55 @@ type QueueInfo struct {
 
 --
 
-### Get a Message off a Queue
+### Delete a Message Queue
+
+As of now the library doesn't support deleting of queues.
+
+--
+
+### Post Messages to a Queue
+
+**Single message:**
 
 ```go
-// get a single message
+id, err := q.PushString("Hello, World!")
+// To control parameters like timeout and delay, construct your own message.
+id, err := q.PushMessage(&mq.Message{Timeout: 60, Delay: 0, Body: "Hi there"})
+```
+
+**Multiple messages:**
+
+You can also pass multiple messages in a single call.
+
+```go
+ids, err := q.PushStrings("Message 1", "Message 2")
+```
+
+To control parameters like timeout and delay, construct your own message.
+
+```go
+ids, err = q.PushMessages(
+	&mq.Message{Timeout: 60, Delay: 0,  Body: "The first"},
+	&mq.Message{Timeout: 60, Delay: 10, Body: "The second"},
+	&mq.Message{Timeout: 60, Delay: 10, Body: "The third"},
+	&mq.Message{Timeout: 60, Delay: 0,  Body: "The fifth"},
+)
+```
+
+**Parameters:**
+
+* `Timeout`: After timeout (in seconds), item will be placed back onto queue.
+You must delete the message from the queue to ensure it does not go back onto the queue.
+ Default is 60 seconds. Minimum is 30 seconds. Maximum is 86,400 seconds (24 hours).
+
+* `Delay`: The item will not be available on the queue until this many seconds have passed.
+Default is 0 seconds. Maximum is 604,800 seconds (7 days).
+
+--
+
+### Get Messages from a Queue
+
+```go
 msg, err := q.Get()
 fmt.Printf("The message says: %q\n", msg.Body)
 ```
@@ -120,17 +197,19 @@ You also can get several messages at a time:
 msgs, err := q.GetN(5)
 ```
 
---
+### Touch a Message on a Queue
 
-### Delete a Message from a Queue
+Touching a reserved message extends its timeout by the duration specified when the message was created, which is 60 seconds by default.
 
 ```go
 msg, _ := q.Get()
-// perform some actions with a message here
-msg.Delete()
+err := msg.Touch()
 ```
 
-Be sure to delete a message from the queue when you're done with it.
+There is another way to touch a message without getting it:
+
+```go
+err := q.TouchMessage("5987586196292186572")
+```
 
 --
-
