@@ -68,7 +68,7 @@ func ListQueues(page, perPage int) (queues []Queue, err error) {
 		Name       string
 	}{}
 
-	q = mq.New("");
+	q := New("");
 	err = q.queues().
 		QueryAdd("page", "%d", page).
 		QueryAdd("per_page", "%d", perPage).
@@ -91,7 +91,7 @@ func ListQueues(page, perPage int) (queues []Queue, err error) {
 func (q Queue) queues(s ...string) *api.URL { return api.Action(q.Settings, "queues", s...) }
 
 func (q Queue) ListQueues(page, perPage int) (queues []Queue, err error) {
-	return mq.ListQueues(page, perPage)
+	return ListQueues(page, perPage)
 }
 
 func (q Queue) Info() (QueueInfo, error) {
