@@ -204,6 +204,12 @@ You also can get several messages at a time:
 msgs, err := q.GetN(5)
 ```
 
+And with timeout param:
+
+```go
+messages, err := q.GetNWithTimeout(4, 600)
+```
+
 ### Touch a Message on a Queue
 
 Touching a reserved message extends its timeout by the duration specified when the message was created, which is 60 seconds by default.
@@ -261,29 +267,30 @@ Be sure to delete a message from the queue when you're done with it.
 
 --
 
-<!--- 
-
-TODO: IMPLEMENT IT!
-
 ### Peek Messages from a Queue
 
 Peeking at a queue returns the next messages on the queue, but it does not reserve them.
 
 ```go
-msg, err := q.Peek()
-
-// or
-
-messages, err := q.Peek(13) 
+message, err := q.Peek()
 ```
 
-**Optional parameters:**
+There is a way to get several messages not reserving them:
 
-* `n`: The maximum number of messages to peek. Default is 1. Maximum is 100.
+```go
+messages, err := q.PeekN(50)
+for _, m := range messages {
+  fmt.Println(m.Body)
+}
+```
 
-- -
+And with timeout param:
 
--->
+```go
+messages, err := q.PeekNWithTimeout(4, 600)
+```
+
+--
 
 ### Clear a Queue
 

@@ -225,6 +225,48 @@ func (q Queue) GetNWithTimeout(n, timeout int) (msgs []*Message, err error) {
 	return out.Messages, nil
 }
 
+func (q Queue) Peek() (msg *Message, err error) {
+	msgs, err := q.PeekN(1)
+	if err != nil {
+		return
+	}
+
+	if len(msgs) > 0 {
+		msg = msgs[0]
+	} else {
+		err = errors.New("Couldn't get a single message")
+	}
+
+	return
+}
+
+// peek N messages
+func (q Queue) PeekN(n int) (msgs []*Message, err error) {
+	msgs, err = q.PeekNWithTimeout(n, 0)
+
+	return
+}
+
+func (q Queue) PeekNWithTimeout(n, timeout int) (msgs []*Message, err error) {
+	out := struct {
+		Messages []*Message `json:"messages"`
+	}{}
+
+	err = q.queues(q.Name, "messages", "peek").
+		QueryAdd("n", "%d", n).
+		QueryAdd("timeout", "%d", timeout).
+		Req("GET", nil, &out)
+	if err != nil {
+		return
+	}
+
+	for _, msg := range out.Messages {
+		msg.q = q
+	}
+
+	return out.Messages, nil
+}
+
 // Delete all messages in the queue
 func (q Queue) Clear() (err error) {
 	return q.queues(q.Name, "clear").Req("POST", nil, nil)
