@@ -90,6 +90,8 @@ func ListQueues(page, perPage int) (queues []Queue, err error) {
 
 func (q Queue) queues(s ...string) *api.URL { return api.Action(q.Settings, "queues", s...) }
 
+// This method is left to support backward compatibility.
+// This method is replaced by func ListQueues(page, perPage int) (queues []Queue, err error)
 func (q Queue) ListQueues(page, perPage int) (queues []Queue, err error) {
 	return ListQueues(page, perPage)
 }

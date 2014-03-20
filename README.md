@@ -43,7 +43,7 @@ queue := mq.New("test_queue");
 ### Get Queues List
 
 ```go
-queues, err := q.ListQueues(0, 100);
+queues, err := mq.ListQueues(0, 100);
 for _, element := range queues {
 	fmt.Println(element.Name);
 }
@@ -440,7 +440,7 @@ q.Update(mq.QueueInfo{
 
 <!---
 
-TODO: REWRITE IT FOR GO (COPYPASTED FROM RUBY)
+TODO: IMPLEMENT IT AND REWRITE IT FOR GO (COPYPASTED FROM RUBY CLIENT LIB)
 
 ## Queue Alerts
 
