@@ -135,7 +135,14 @@ type QueueInfo struct {
 
 ### Delete a Message Queue
 
-As of now the library doesn't support deleting of queues.
+```go
+deleted, err := q.Delete()
+if(deleted) { 
+  fmt.Println("Successfully deleted")
+} else {
+  fmt.Println("Cannot delete, because of error: ", err)
+}
+```
 
 --
 

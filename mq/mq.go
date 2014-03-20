@@ -108,6 +108,13 @@ func (q Queue) Update(qi QueueInfo) (QueueInfo, error) {
 	return out, err
 }
 
+func (q Queue) Delete() (bool, error) {
+	out := QueueInfo{}
+	err := q.queues(q.Name).Req("DELETE", nil, &out)
+	success := err == nil
+	return success, err
+}
+
 type Subscription struct {
 	PushType     string
 	Retries      int
