@@ -274,6 +274,11 @@ func (q Queue) PeekNWithTimeout(n, timeout int) (msgs []*Message, err error) {
 	return out.Messages, nil
 }
 
+// Delete this queue
+func (q Queue) DeleteQueue() error {
+	return q.queues(q.Name).Req("DELETE", nil, nil)
+}
+
 // Delete all messages in the queue
 func (q Queue) Clear() (err error) {
 	return q.queues(q.Name, "clear").Req("POST", nil, nil)
