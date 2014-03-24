@@ -298,10 +298,6 @@ messages, err := q.PeekNWithTimeout(4, 600)
 err := q.Clear()
 ```
 
-<!--- 
-
-TODO: IMPLEMENT IT!
-
 ### Add an Alert to a Queue
 
 [Check out our Blog Post on Queue Alerts](http://blog.iron.io).
@@ -316,23 +312,51 @@ You may add up to 5 alerts per queue.
 * `trigger`: required. It will be used to calculate actual values of queue size when alert must be triggered. See type field description. Trigger must be integer value greater than 0.
 * `queue`: required. Name of queue which will be used to post alert messages.
 
-**Optional parameters:**
-
-* `snooze`: Number of seconds between alerts. If alert must be triggered but snooze is still active, alert will be omitted. Snooze must be integer value greater than or equal to 0.
-
-```ruby
-queue.add_alert({:type => "progressive",
-                  :trigger => 10,
-                  :queue => "my_alert_queue",
-                  :direction => "asc",
-                  :snooze => "0"
-                 })
-queue.clear #  => #<IronMQ::ResponseBase:0x007f95d3b25438 @raw={"msg"=>"Updated"}, @code=200>
+```go
+err := q.AddAlerts(
+  &mq.Alert{Queue: "new_milestone_queue", Trigger: 10, Direction: "asc",  Type: "progressive"},
+  &mq.Alert{Queue: "low_level_queue",     Trigger: 5,  Direction: "desc", Type: "fixed" })
 ```
 
-- -
+#### Update alerts in a queue
+```go
+err := q.AddAlerts(
+  &mq.Alert{Queue: "milestone_queue", Trigger: 100, Direction: "asc",  Type: "progressive"})
+```
 
--->
+#### Remove alerts from a queue
+
+You can delete an alert from a queue by id:
+
+```go
+err := q.RemoveAlert("532fdf593663ed6afa06ed16")
+```
+
+Or delete several alerts by ids:
+
+```go
+err := q.RemoveAlerts("532f59663ed6afed16483052", "559663ed6af6483399b3400a")
+```
+
+Also you can delete all alerts
+
+```go
+err := q.RemoveAllAlerts()
+```
+
+Please, remember, that passing zero of alerts while update process will lead to deleating of all previously added alerts.
+
+```go
+q.AddAlerts(
+  &mq.Alert{Queue: "alert1", Trigger: 10, Direction: "asc", Type: "progressive"},
+  &mq.Alert{Queue: "alert2", Trigger: 5,  Direction: "desc", Type: "fixed" })
+info, _ := q.Info() // 2
+
+q.UpdateAlerts()
+info, _ = q.Info()  // 0
+```
+
+--
 
 ## Push Queues
 

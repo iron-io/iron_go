@@ -28,6 +28,7 @@ type QueueInfo struct {
 	Retries       int               `json:"retries_delay,omitempty"`
 	Size          int               `json:"size,omitempty"`
 	Subscribers   []QueueSubscriber `json:"subscribers,omitempty"`
+	Alerts        []Alert           `json:"alerts,omitempty"`
 	TotalMessages int               `json:"total_messages,omitempty"`
 	ErrorQueue    string            `json:"error_queue,omitempty"`
 }
@@ -56,6 +57,14 @@ type Subscriber struct {
 	Status     string `json:"status"`
 	URL        string `json:"url"`
 }
+
+type Alert struct {
+	Type       string `json:"type"`
+	Direction  string `json:direction`
+	Trigger    int    `json:trigger`
+	Queue      string `queue`
+}
+
 
 func New(queueName string) *Queue {
 	return &Queue{Settings: config.Config("iron_mq"), Name: queueName}
@@ -321,6 +330,42 @@ func actualPushStatus(subs []*Subscriber) bool {
 	}
 
 	return true
+}
+
+func (q Queue) AddAlerts(alerts ...*Alert) (err error) {
+	in := struct {
+		Alerts []*Alert `json:"alerts"`
+	}{Alerts: alerts}
+	return q.queues(q.Name, "alerts").Req("POST", &in, nil)
+}
+
+func (q Queue) UpdateAlerts(alerts ...*Alert) (err error) {
+	in := struct {
+		Alerts []*Alert `json:"alerts"`
+	}{Alerts: alerts}
+	return q.queues(q.Name, "alerts").Req("PUT", &in, nil)
+}
+
+func (q Queue) RemoveAllAlerts() (err error) {
+	return q.queues(q.Name, "alerts").Req("DELETE", nil, nil)
+}
+
+type AlertInfo struct {
+	Id         string `json:"id"`
+}
+
+func (q Queue) RemoveAlerts(alertIds ...string) (err error) {
+	in := struct {
+		Alerts []AlertInfo `json:"alerts"`
+	}{Alerts: make([]AlertInfo, len(alertIds))}
+	for i, alertId := range alertIds {
+		(in.Alerts[i]).Id = alertId
+	}
+	return q.queues(q.Name, "alerts").Req("DELETE", &in, nil)
+}
+
+func (q Queue) RemoveAlert(alertId string) (err error) {
+	return q.queues(q.Name, "alerts", alertId).Req("DELETE", nil, nil)
 }
 
 // Delete message from queue
