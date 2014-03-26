@@ -118,8 +118,7 @@ func (q Queue) Update(qi QueueInfo) (QueueInfo, error) {
 }
 
 func (q Queue) Delete() (bool, error) {
-	out := QueueInfo{}
-	err := q.queues(q.Name).Req("DELETE", nil, &out)
+	err := q.queues(q.Name).Req("DELETE", nil, nil)
 	success := err == nil
 	return success, err
 }
