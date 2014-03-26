@@ -8,7 +8,7 @@ Iron.io Go Client Library
 The [full API documentation is here](http://dev.iron.io/mq/reference/api/) and this client tries to stick to the API as
 much as possible so if you see an option in the API docs, you can use it in the methods below. 
 
-You can find [Go docs here](http://go.pkgdoc.org/github.com/iron-io/iron_go).
+You can find [Go docs here](http://godoc.org/github.com/iron-io/iron_go).
 
 ## Getting Started
 

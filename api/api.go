@@ -41,28 +41,20 @@ func init() {
 
 func Action(cs config.Settings, prefix string, suffix ...string) *URL {
 	parts := append([]string{prefix}, suffix...)
-	for n, part := range parts {
-		parts[n] = url.QueryEscape(part)
-	}
-
-	u := &URL{Settings: cs, URL: url.URL{}}
-	u.URL.Scheme = cs.Scheme
-	u.URL.Host = fmt.Sprintf("%s:%d", url.QueryEscape(cs.Host), cs.Port)
-	u.URL.Path = fmt.Sprintf("/%s/projects/%s/%s", cs.ApiVersion, cs.ProjectId, strings.Join(parts, "/"))
-	return u
+	return ActionEndpoint(cs, strings.Join(parts, "/"))
 }
 
 func ActionEndpoint(cs config.Settings, endpoint string) *URL {
 	u := &URL{Settings: cs, URL: url.URL{}}
 	u.URL.Scheme = cs.Scheme
-	u.URL.Host = fmt.Sprintf("%s:%d", url.QueryEscape(cs.Host), cs.Port)
+	u.URL.Host = fmt.Sprintf("%s:%d", cs.Host, cs.Port)
 	u.URL.Path = fmt.Sprintf("/%s/projects/%s/%s", cs.ApiVersion, cs.ProjectId, endpoint)
 	return u
 }
 
 func VersionAction(cs config.Settings) *URL {
 	u := &URL{Settings: cs, URL: url.URL{Scheme: cs.Scheme}}
-	u.URL.Host = fmt.Sprintf("%s:%d", url.QueryEscape(cs.Host), cs.Port)
+	u.URL.Host = fmt.Sprintf("%s:%d", cs.Host, cs.Port)
 	u.URL.Path = "/version"
 	return u
 }
