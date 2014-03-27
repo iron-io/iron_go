@@ -29,7 +29,7 @@ func sleepBetweenRetries(previousDuration time.Duration) time.Duration {
 	if previousDuration >= 60*time.Second {
 		return previousDuration
 	}
-	return previousDuration * previousDuration
+	return previousDuration + previousDuration
 }
 
 var GoCodeRunner = []byte(`#!/bin/sh
@@ -118,8 +118,8 @@ func (w *Worker) WaitForTask(taskId string) chan TaskInfo {
 			}
 
 			if info.Status == "queued" || info.Status == "running" {
-				retryDelay = sleepBetweenRetries(retryDelay)
 				time.Sleep(retryDelay)
+				retryDelay = sleepBetweenRetries(retryDelay)
 			} else {
 				out <- info
 				return
@@ -142,8 +142,8 @@ func (w *Worker) WaitForTaskLog(taskId string) chan []byte {
 			if err != nil {
 				e, ok := err.(api.HTTPResponseError)
 				if ok && e.Response().StatusCode == 404 {
-					retryDelay = sleepBetweenRetries(retryDelay)
 					time.Sleep(retryDelay)
+					retryDelay = sleepBetweenRetries(retryDelay)
 					continue
 				}
 				return
