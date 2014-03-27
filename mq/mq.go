@@ -28,6 +28,7 @@ type QueueInfo struct {
 	Retries       int               `json:"retries_delay,omitempty"`
 	Size          int               `json:"size,omitempty"`
 	Subscribers   []QueueSubscriber `json:"subscribers,omitempty"`
+	Alerts        []Alert           `json:"alerts,omitempty"`
 	TotalMessages int               `json:"total_messages,omitempty"`
 	ErrorQueue    string            `json:"error_queue,omitempty"`
 }
@@ -57,19 +58,26 @@ type Subscriber struct {
 	URL        string `json:"url"`
 }
 
+type Alert struct {
+	Type       string `json:"type"`
+	Direction  string `json:direction`
+	Trigger    int    `json:trigger`
+	Queue      string `queue`
+}
+
+
 func New(queueName string) *Queue {
 	return &Queue{Settings: config.Config("iron_mq"), Name: queueName}
 }
 
-func (q Queue) queues(s ...string) *api.URL { return api.Action(q.Settings, "queues", s...) }
-
-func (q Queue) ListQueues(page, perPage int) (queues []Queue, err error) {
+func ListQueues(page, perPage int) (queues []Queue, err error) { 
 	out := []struct {
 		Id         string
 		Project_id string
 		Name       string
 	}{}
 
+	q := New("");
 	err = q.queues().
 		QueryAdd("page", "%d", page).
 		QueryAdd("per_page", "%d", perPage).
@@ -89,6 +97,14 @@ func (q Queue) ListQueues(page, perPage int) (queues []Queue, err error) {
 	return
 }
 
+func (q Queue) queues(s ...string) *api.URL { return api.Action(q.Settings, "queues", s...) }
+
+// This method is left to support backward compatibility.
+// This method is replaced by func ListQueues(page, perPage int) (queues []Queue, err error)
+func (q Queue) ListQueues(page, perPage int) (queues []Queue, err error) {
+	return ListQueues(page, perPage)
+}
+
 func (q Queue) Info() (QueueInfo, error) {
 	qi := QueueInfo{}
 	err := q.queues(q.Name).Req("GET", nil, &qi)
@@ -99,6 +115,12 @@ func (q Queue) Update(qi QueueInfo) (QueueInfo, error) {
 	out := QueueInfo{}
 	err := q.queues(q.Name).Req("POST", qi, &out)
 	return out, err
+}
+
+func (q Queue) Delete() (bool, error) {
+	err := q.queues(q.Name).Req("DELETE", nil, nil)
+	success := err == nil
+	return success, err
 }
 
 type Subscription struct {
@@ -211,6 +233,48 @@ func (q Queue) GetNWithTimeout(n, timeout int) (msgs []*Message, err error) {
 	return out.Messages, nil
 }
 
+func (q Queue) Peek() (msg *Message, err error) {
+	msgs, err := q.PeekN(1)
+	if err != nil {
+		return
+	}
+
+	if len(msgs) > 0 {
+		msg = msgs[0]
+	} else {
+		err = errors.New("Couldn't get a single message")
+	}
+
+	return
+}
+
+// peek N messages
+func (q Queue) PeekN(n int) (msgs []*Message, err error) {
+	msgs, err = q.PeekNWithTimeout(n, 0)
+
+	return
+}
+
+func (q Queue) PeekNWithTimeout(n, timeout int) (msgs []*Message, err error) {
+	out := struct {
+		Messages []*Message `json:"messages"`
+	}{}
+
+	err = q.queues(q.Name, "messages", "peek").
+		QueryAdd("n", "%d", n).
+		QueryAdd("timeout", "%d", timeout).
+		Req("GET", nil, &out)
+	if err != nil {
+		return
+	}
+
+	for _, msg := range out.Messages {
+		msg.q = q
+	}
+
+	return out.Messages, nil
+}
+
 // Delete all messages in the queue
 func (q Queue) Clear() (err error) {
 	return q.queues(q.Name, "clear").Req("POST", nil, nil)
@@ -265,6 +329,42 @@ func actualPushStatus(subs []*Subscriber) bool {
 	}
 
 	return true
+}
+
+func (q Queue) AddAlerts(alerts ...*Alert) (err error) {
+	in := struct {
+		Alerts []*Alert `json:"alerts"`
+	}{Alerts: alerts}
+	return q.queues(q.Name, "alerts").Req("POST", &in, nil)
+}
+
+func (q Queue) UpdateAlerts(alerts ...*Alert) (err error) {
+	in := struct {
+		Alerts []*Alert `json:"alerts"`
+	}{Alerts: alerts}
+	return q.queues(q.Name, "alerts").Req("PUT", &in, nil)
+}
+
+func (q Queue) RemoveAllAlerts() (err error) {
+	return q.queues(q.Name, "alerts").Req("DELETE", nil, nil)
+}
+
+type AlertInfo struct {
+	Id         string `json:"id"`
+}
+
+func (q Queue) RemoveAlerts(alertIds ...string) (err error) {
+	in := struct {
+		Alerts []AlertInfo `json:"alerts"`
+	}{Alerts: make([]AlertInfo, len(alertIds))}
+	for i, alertId := range alertIds {
+		(in.Alerts[i]).Id = alertId
+	}
+	return q.queues(q.Name, "alerts").Req("DELETE", &in, nil)
+}
+
+func (q Queue) RemoveAlert(alertId string) (err error) {
+	return q.queues(q.Name, "alerts", alertId).Req("DELETE", nil, nil)
 }
 
 // Delete message from queue
