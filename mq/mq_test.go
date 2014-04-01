@@ -9,14 +9,31 @@ import (
 	. "github.com/jeffh/go.bdd"
 )
 
-func TestEverything(t *testing.T) {}
+func TestUrl(t *testing.T) {
+	fmt.Println("Testing URL with spaces")
+	mq := mq.New("MyProject - Prod")
+	id, err := mq.PushString("hello")
+	if err != nil {
+		t.Fatal("No good", err)
+	}
+	fmt.Println("id:", id)
+	info, err := mq.Info()
+	if err != nil {
+		fmt.Println("ERROR:", err)
+		t.Fatal("No good", err)
+	}
+	fmt.Println(info)
+}
 
-func init() {
+func TestEverything(t *testing.T) {
 	defer PrintSpecReport()
+
+	qname := "queuename3"
 
 	Describe("IronMQ", func() {
 		It("Deletes all existing messages", func() {
-			c := mq.New("queuename")
+			c := mq.New(qname)
+			c.PushString("hello") // just to ensure queue exists
 			Expect(c.Clear(), ToBeNil)
 
 			info, err := c.Info()
@@ -25,7 +42,7 @@ func init() {
 		})
 
 		It("Pushes ands gets a message", func() {
-			c := mq.New("queuename")
+			c := mq.New(qname)
 			id1, err := c.PushString("just a little test")
 			Expect(err, ToBeNil)
 			defer c.DeleteMessage(id1)
@@ -39,7 +56,7 @@ func init() {
 		})
 
 		It("clears the queue", func() {
-			q := mq.New("queuename")
+			q := mq.New(qname)
 
 			strings := []string{}
 			for n := 0; n < 100; n++ {
@@ -61,12 +78,12 @@ func init() {
 		})
 
 		It("Lists all queues", func() {
-			c := mq.New("queuename")
+			c := mq.New(qname)
 			queues, err := c.ListQueues(0, 100) // can't check the caches value just yet.
 			Expect(err, ToBeNil)
 			found := false
 			for _, queue := range queues {
-				if queue.Name == "queuename" {
+				if queue.Name == qname {
 					found = true
 					break
 				}
@@ -75,7 +92,7 @@ func init() {
 		})
 
 		It("releases a message", func() {
-			c := mq.New("queuename")
+			c := mq.New(qname)
 
 			id, err := c.PushString("trying")
 			Expect(err, ToBeNil)
@@ -87,9 +104,9 @@ func init() {
 			Expect(err, ToBeNil)
 
 			msg, err = c.Get()
-			Expect(msg, ToEqual, nil)
+			Expect(msg, ToBeNil)
 
-			time.Sleep(3)
+			time.Sleep(3 * time.Second)
 
 			msg, err = c.Get()
 			Expect(err, ToBeNil)
@@ -105,4 +122,8 @@ func init() {
 			Expect(info.Id, ToEqual, rc.Id)
 		})
 	})
+}
+
+func init() {
+
 }

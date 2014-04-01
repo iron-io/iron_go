@@ -59,25 +59,24 @@ type Subscriber struct {
 }
 
 type Alert struct {
-	Type       string `json:"type"`
-	Direction  string `json:direction`
-	Trigger    int    `json:trigger`
-	Queue      string `queue`
+	Type      string `json:"type"`
+	Direction string `json:direction`
+	Trigger   int    `json:trigger`
+	Queue     string `queue`
 }
-
 
 func New(queueName string) *Queue {
 	return &Queue{Settings: config.Config("iron_mq"), Name: queueName}
 }
 
-func ListQueues(page, perPage int) (queues []Queue, err error) { 
+func ListQueues(page, perPage int) (queues []Queue, err error) {
 	out := []struct {
 		Id         string
 		Project_id string
 		Name       string
 	}{}
 
-	q := New("");
+	q := New("")
 	err = q.queues().
 		QueryAdd("page", "%d", page).
 		QueryAdd("per_page", "%d", perPage).
@@ -350,7 +349,7 @@ func (q Queue) RemoveAllAlerts() (err error) {
 }
 
 type AlertInfo struct {
-	Id         string `json:"id"`
+	Id string `json:"id"`
 }
 
 func (q Queue) RemoveAlerts(alertIds ...string) (err error) {
