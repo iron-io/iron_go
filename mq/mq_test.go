@@ -2,6 +2,7 @@ package mq_test
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -120,6 +121,23 @@ func TestEverything(t *testing.T) {
 			rc, err := c.Update(qi)
 			Expect(err, ToBeNil)
 			Expect(info.Id, ToEqual, rc.Id)
+		})
+		It("Adds subscribers without overwriting existing ones", func() {
+			queue := mq.New("subscribertest-" + strconv.Itoa(time.Now().Nanosecond()))
+			defer queue.Delete()
+			subscription := mq.Subscription{PushType: "multicast"}
+			err := queue.Subscribe(subscription, "http://server1")
+			Expect(err, ToBeNil)
+			info, err := queue.Info()
+			Expect(len(info.Subscribers), ToEqual, 1)
+			err = queue.Subscribe(subscription, "http://server2")
+			Expect(err, ToBeNil)
+			info, err = queue.Info()
+			Expect(len(info.Subscribers), ToEqual, 2)
+			err = queue.Subscribe(subscription, "http://server3", "http://server4")
+			Expect(err, ToBeNil)
+			info, err = queue.Info()
+			Expect(len(info.Subscribers), ToEqual, 4)
 		})
 	})
 }

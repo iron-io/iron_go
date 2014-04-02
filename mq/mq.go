@@ -138,7 +138,7 @@ func (q Queue) Subscribe(subscription Subscription, subscribers ...string) (err 
 	for i, subscriber := range subscribers {
 		in.Subscribers[i].URL = subscriber
 	}
-	return q.queues(q.Name).Req("POST", &in, nil)
+	return q.queues(q.Name, "subscribers").Req("POST", &in, nil)
 }
 
 func (q Queue) PushString(body string) (id string, err error) {
