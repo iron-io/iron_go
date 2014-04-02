@@ -71,10 +71,14 @@ type TaskInfo struct {
 type CodeSource map[string][]byte // map[pathInZip]code
 
 type Code struct {
-	Name     string
-	Runtime  string
-	FileName string
-	Source   CodeSource
+	Name           string        `json:"name"`
+	Runtime        string        `json:"runtime"`
+	FileName       string        `json:"file_name"`
+	Config         string        `json:"config,omitempty"`
+	MaxConcurrency int           `json:"max_concurrency,omitempty"`
+	Retries        int           `json:"retries,omitempty"`
+	RetriesDelay   time.Duration `json:"-"`
+	Source         CodeSource    `json:"-"`
 }
 
 type CodeInfo struct {
@@ -124,10 +128,14 @@ func (w *Worker) CodePackageUpload(code Code) (id string, err error) {
 		return
 	}
 	jEncoder := json.NewEncoder(mMetaWriter)
-	err = jEncoder.Encode(map[string]string{
-		"name":      code.Name,
-		"runtime":   code.Runtime,
-		"file_name": code.FileName,
+	err = jEncoder.Encode(map[string]interface{}{
+		"name":            code.Name,
+		"runtime":         code.Runtime,
+		"file_name":       code.FileName,
+		"config":          code.Config,
+		"max_concurrency": code.MaxConcurrency,
+		"retries":         code.Retries,
+		"retries_delay":   code.RetriesDelay.Seconds(),
 	})
 	if err != nil {
 		return
