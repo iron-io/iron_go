@@ -2,6 +2,7 @@ package mq_test
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -122,6 +123,60 @@ func TestEverything(t *testing.T) {
 			Expect(info.Id, ToEqual, rc.Id)
 		})
 	})
+
+	It("tests new AddSubscribers function", func() {
+		subQueue := mq.New("AddSubscribersQueue-" + strconv.Itoa(time.Now().Nanosecond()))
+		defer subQueue.Delete()
+		subscription := mq.Subscription{PushType: "multicast"}
+		err := subQueue.AddSubscribers(subscription, "http://server1/")
+		Expect(err, ToBeNil)
+		info, err := subQueue.Info()
+		Expect(err, ToBeNil)
+		Expect(len(info.Subscribers), ToEqual, 1)
+		err = subQueue.AddSubscribers(subscription, "http://server2/")
+		Expect(err, ToBeNil)
+		info, err = subQueue.Info()
+		Expect(err, ToBeNil)
+		Expect(len(info.Subscribers), ToEqual, 2)
+	})
+
+	It("tests new SetSubscribers function", func() {
+		subQueue := mq.New("SetSubscribersQueue-" + strconv.Itoa(time.Now().Nanosecond()))
+		defer subQueue.Delete()
+		subscription := mq.Subscription{PushType: "multicast"}
+		err := subQueue.AddSubscribers(subscription, "http://server1/")
+		Expect(err, ToBeNil)
+		info, err := subQueue.Info()
+		Expect(err, ToBeNil)
+		Expect(len(info.Subscribers), ToEqual, 1)
+		err = subQueue.SetSubscribers(subscription, "http://server2/", "http://server3/", "http://server4/")
+		Expect(err, ToBeNil)
+		info, err = subQueue.Info()
+		Expect(err, ToBeNil)
+		Expect(len(info.Subscribers), ToEqual, 3)
+		err = subQueue.AddSubscribers(subscription, "http://server5/")
+		Expect(err, ToBeNil)
+		info, err = subQueue.Info()
+		Expect(err, ToBeNil)
+		Expect(len(info.Subscribers), ToEqual, 4)
+	})
+
+	It("tests original Subscribe function", func() {
+		subQueue := mq.New("Subscribe-" + strconv.Itoa(time.Now().Nanosecond()))
+		defer subQueue.Delete()
+		subscription := mq.Subscription{PushType: "multicast"}
+		err := subQueue.Subscribe(subscription, "http://server1/")
+		Expect(err, ToBeNil)
+		info, err := subQueue.Info()
+		Expect(err, ToBeNil)
+		Expect(len(info.Subscribers), ToEqual, 1)
+		err = subQueue.Subscribe(subscription, "http://server2/", "http://server3/", "http://server4/")
+		Expect(err, ToBeNil)
+		info, err = subQueue.Info()
+		Expect(err, ToBeNil)
+		Expect(len(info.Subscribers), ToEqual, 3)
+	})
+
 }
 
 func init() {

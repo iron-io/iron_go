@@ -7,6 +7,7 @@ import (
 
 	"github.com/iron-io/iron_go/api"
 	"github.com/iron-io/iron_go/config"
+	"strings"
 )
 
 type Queue struct {
@@ -128,7 +129,14 @@ type Subscription struct {
 	RetriesDelay int
 }
 
+// Subscribe overrides the current subscriber list with the new list.
+// This now calls SetSubscribers and is kept to allow backward compatibility with existing applications
 func (q Queue) Subscribe(subscription Subscription, subscribers ...string) (err error) {
+	return q.SetSubscribers(subscription, subscribers...)
+}
+
+// SetSubscribers overrides the current subscriber list with the new list
+func (q Queue) SetSubscribers(subscription Subscription, subscribers ...string) (err error) {
 	in := QueueInfo{
 		PushType:     subscription.PushType,
 		Retries:      subscription.Retries,
@@ -137,6 +145,29 @@ func (q Queue) Subscribe(subscription Subscription, subscribers ...string) (err 
 	}
 	for i, subscriber := range subscribers {
 		in.Subscribers[i].URL = subscriber
+	}
+	return q.queues(q.Name).Req("POST", &in, nil)
+}
+
+// AddSubscribers adds the new list of subscribers to the existing subscribers
+func (q Queue) AddSubscribers(subscription Subscription, subscribers ...string) (err error) {
+	qiExisting, err := q.Info()
+	// if we have a 404, it is ok to continue, the queue doesn't exist yet
+	// if we have other errors we should return it
+	if err != nil && !strings.HasPrefix(err.Error(), "404") {
+		return err
+	}
+	in := QueueInfo{
+		PushType:     subscription.PushType,
+		Retries:      subscription.Retries,
+		RetriesDelay: subscription.RetriesDelay,
+		Subscribers:  make([]QueueSubscriber, len(subscribers)+len(qiExisting.Subscribers)),
+	}
+	for i, subscriber := range subscribers {
+		in.Subscribers[i].URL = subscriber
+	}
+	for i, subscriber := range qiExisting.Subscribers {
+		in.Subscribers[i+len(subscribers)] = subscriber
 	}
 	return q.queues(q.Name).Req("POST", &in, nil)
 }
