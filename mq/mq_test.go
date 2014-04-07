@@ -113,6 +113,22 @@ func TestEverything(t *testing.T) {
 			Expect(msg.Id, ToEqual, id)
 		})
 
+		It("deletes a queue", func() {
+			c := mq.New("queuename")
+
+			_, err := c.Update(mq.QueueInfo{})
+			Expect(err, ToBeNil)
+
+			_, err = c.Info()
+			Expect(err, ToBeNil)
+
+			err = c.DeleteQueue()
+			Expect(err, ToBeNil)
+
+			_, err = c.Info()
+			Expect(err, ToNotBeNil)
+		})
+
 		It("updates a queue", func() {
 			c := mq.New("pushqueue")
 			info, err := c.Info()
