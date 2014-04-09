@@ -9,6 +9,12 @@ import (
 	"github.com/iron-io/iron_go/config"
 )
 
+var (
+	// ErrNoMessages is returned when an attempt is made to get or peek a message from the queue,
+	// but no more messages are present.
+	ErrNoMessages = errors.New("mq: Couldn't get a single message")
+)
+
 type Queue struct {
 	Settings config.Settings
 	Name     string
@@ -199,7 +205,7 @@ func (q Queue) Get() (msg *Message, err error) {
 	if len(msgs) > 0 {
 		msg = msgs[0]
 	} else {
-		err = errors.New("Couldn't get a single message")
+		err = ErrNoMessages
 	}
 
 	return
@@ -241,7 +247,7 @@ func (q Queue) Peek() (msg *Message, err error) {
 	if len(msgs) > 0 {
 		msg = msgs[0]
 	} else {
-		err = errors.New("Couldn't get a single message")
+		err = ErrNoMessages
 	}
 
 	return
