@@ -128,17 +128,22 @@ type Subscription struct {
 	RetriesDelay int
 }
 
-func (q Queue) Subscribe(subscription Subscription, subscribers ...string) (err error) {
-	in := QueueInfo{
-		PushType:     subscription.PushType,
-		Retries:      subscription.Retries,
-		RetriesDelay: subscription.RetriesDelay,
-		Subscribers:  make([]QueueSubscriber, len(subscribers)),
-	}
+// RemoveSubscribers removes subscribers.
+func (q Queue) RemoveSubscribers(subscribers ...string) (err error) {
+	qi := QueueInfo{Subscribers: make([]QueueSubscriber, len(subscribers))}
 	for i, subscriber := range subscribers {
-		in.Subscribers[i].URL = subscriber
+		qi.Subscribers[i].URL = subscriber
 	}
-	return q.queues(q.Name).Req("POST", &in, nil)
+	return q.queues(q.Name, "subscribers").Req("DELETE", &qi, nil)
+}
+
+// AddSubscribers adds subscribers.
+func (q Queue) AddSubscribers(subscribers ...string) (err error) {
+	qi := QueueInfo{Subscribers: make([]QueueSubscriber, len(subscribers))}
+	for i, subscriber := range subscribers {
+		qi.Subscribers[i].URL = subscriber
+	}
+	return q.queues(q.Name, "subscribers").Req("POST", &qi, nil)
 }
 
 func (q Queue) PushString(body string) (id string, err error) {

@@ -2,6 +2,7 @@ package mq_test
 
 import (
 	"fmt"
+	"strconv"
 	"testing"
 	"time"
 
@@ -120,6 +121,35 @@ func TestEverything(t *testing.T) {
 			rc, err := c.Update(qi)
 			Expect(err, ToBeNil)
 			Expect(info.Id, ToEqual, rc.Id)
+		})
+		It("Adds and removes subscribers", func() {
+			queue := mq.New("addSubscribersTest-" + strconv.Itoa(time.Now().Nanosecond()))
+			defer queue.Delete()
+			qi := mq.QueueInfo{PushType: "multicast"}
+			qi, err := queue.Update(qi)
+			Expect(qi.PushType, ToEqual, "multicast")
+			Expect(err, ToBeNil)
+			err = queue.AddSubscribers("http://server1")
+			Expect(err, ToBeNil)
+			info, err := queue.Info()
+			Expect(err, ToBeNil)
+			Expect(len(info.Subscribers), ToEqual, 1)
+			err = queue.AddSubscribers("http://server2", "http://server3")
+			Expect(err, ToBeNil)
+			info, err = queue.Info()
+			Expect(err, ToBeNil)
+			Expect(len(info.Subscribers), ToEqual, 3)
+			err = queue.RemoveSubscribers("http://server2")
+			Expect(err, ToBeNil)
+			info, err = queue.Info()
+			Expect(err, ToBeNil)
+			Expect(len(info.Subscribers), ToEqual, 2)
+			err = queue.RemoveSubscribers("http://server1", "http://server3")
+			Expect(err, ToBeNil)
+			info, err = queue.Info()
+			Expect(err, ToBeNil)
+			Expect(len(info.Subscribers), ToEqual, 0)
+
 		})
 	})
 }
