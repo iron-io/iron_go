@@ -219,12 +219,14 @@ func (q Queue) Get() (msg *Message, err error) {
 
 // get N messages
 func (q Queue) GetN(n int) (msgs []*Message, err error) {
-	msgs, err = q.GetNWithTimeout(n, 0)
-
-	return
+	return q.GetNWithTimeoutAndWait(n, 0, 0)
 }
 
 func (q Queue) GetNWithTimeout(n, timeout int) (msgs []*Message, err error) {
+	return q.GetNWithTimeoutAndWait(n, timeout, 0)
+}
+
+func (q Queue) GetNWithTimeoutAndWait(n, timeout, wait int) (msgs []*Message, err error) {
 	out := struct {
 		Messages []*Message `json:"messages"`
 	}{}
@@ -232,6 +234,7 @@ func (q Queue) GetNWithTimeout(n, timeout int) (msgs []*Message, err error) {
 	err = q.queues(q.Name, "messages").
 		QueryAdd("n", "%d", n).
 		QueryAdd("timeout", "%d", timeout).
+		QueryAdd("wait", "%d", wait).
 		Req("GET", nil, &out)
 	if err != nil {
 		return
