@@ -42,7 +42,10 @@ type Message struct {
 	// Delay is the amount of time in seconds to wait before adding the message
 	// to the queue.
 	Delay int64 `json:"delay,omitempty"`
-	q     Queue
+	// expires_in: How long in seconds to keep the item on the queue before it is deleted.
+	// Default is 604,800 seconds (7 days). Maximum is 2,592,000 seconds (30 days).
+	ExpiresIn int64 `json:"expires_in,omitempty"`
+	q         Queue
 }
 
 type PushStatus struct {
