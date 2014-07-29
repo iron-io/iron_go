@@ -565,7 +565,7 @@ ids, err := w.TaskQueue(worker.Task{CodeName: "HelloWorld"})
 You could specify payload by assigning it to the field of Task struct:
 
 ```go
-payload  := `{ \"first\" : \"Hello", \"second\" : \"World\" }`
+payload  := `{"first": "Hello", "second": "World"}`
 ids, err := w.TaskQueue(worker.Task{CodeName: "HelloWorld", Payload: payload})
 ```
 
@@ -577,6 +577,24 @@ Task struct has some fields for setting additional parameters:
   - **Timeout**: The maximum runtime of your task in seconds. No task can exceed 3600 seconds (60 minutes). The default is 3600 but can be set to a shorter duration. Should be of type *time.Duration.
   - **Delay**: The number of seconds to delay before actually queuing the task. Should be of type *time.Duration. Default is 0.
 
+## Scheduling a Worker
+
+```go
+duration := time.Duration(10) * time.Minute
+payload  := `{"first": "Hello", "second": "World"}`
+ids, err := w.Schedule(worker.Schedule{CodeName: "HelloWorld", Delay: &duration, Payload: payload})
+```
+
+### Scheduling Parameters
+
+Schedule struct has some fields for setting additional parameters:
+
+  - **RunEvery**: The amount of time, in seconds, between runs. By default, the task will only run once. Request will return a 400 error if this field is set to less than 60.
+  - **EndAt**: The time tasks will stop being queued. Should be of type `*time.Time`.
+  - **RunTimes**: The number of times a task will run.
+  - **Priority**: Setting the priority of your job. Valid values are 0, 1, and 2. The default is 0. Higher values means tasks spend less time in the queue once they come off the schedule.
+  - **StartAt**: The time the scheduled task should first be run. Should be of type `*time.Time`.
+  - **MaxConcurrency**: How many worker tasks can run at once.
 
 
 
