@@ -484,5 +484,41 @@ q.Update(mq.QueueInfo{
 * [Other Client Libraries](http://dev.iron.io/mq/libraries/)
 * [Live Chat, Support & Fun](http://get.iron.io/chat)
 
+
+
+
+# IronWorker
+
+IronWorker is a massively scalable background processing system.
+[See How It Works](http://www.iron.io/products/worker/how)
+
+## Getting Started
+
+### Get credentials
+To start using iron_go/worker, you need to sign up and get an oauth token.
+
+1. Go to http://iron.io/ and sign up.
+2. Get an Oauth Token at http://hud.iron.io/tokens
+
+### Configure
+
+1\. Reference the library:
+
+```go
+import "github.com/iron-io/iron_go/mq"
+```
+
+2\. [Setup your Iron.io credentials](http://dev.iron.io/mq/reference/configuration/)
+
+3\. Create an IronMQ client object:
+
+```go
+worker := worker.New()
+```
+
+
+
+
+
 -------------
 © 2011 - 2014 Iron.io Inc. All Rights Reserved.
