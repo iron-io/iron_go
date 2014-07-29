@@ -517,6 +517,43 @@ worker := worker.New()
 ```
 
 
+### Creating a Worker
+
+Here's an example worker:
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Println("Hello World!")
+}
+```
+
+### Upload code to server
+
+#### Using CLI tool (preferred)
+
+* Get [CLI](http://dev.iron.io/worker/reference/cli) tool
+* Download or create `iron.json` config file with project_id/password
+* Build your .go file using `go build`
+* Create `HelloWorld.worker` file, example:
+
+```ruby
+runtime 'binary'
+exec 'your_binary_file_name'
+```
+* Upload!
+
+```sh
+$ iron_worker upload HelloWorld
+```
+
+[.worker syntax reference](http://dev.iron.io/worker/reference/dotworker/)
+
 
 
 
