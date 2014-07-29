@@ -517,7 +517,7 @@ worker := worker.New()
 ```
 
 
-### Creating a Worker
+## Creating a Worker
 
 Here's an example worker:
 
@@ -533,9 +533,9 @@ func main() {
 }
 ```
 
-### Upload code to server
+## Upload code to server
 
-#### Using CLI tool (preferred)
+### Using CLI tool (preferred)
 
 * Get [CLI](http://dev.iron.io/worker/reference/cli) tool
 * Download or create `iron.json` config file with project_id/password
@@ -553,6 +553,29 @@ $ iron_worker upload HelloWorld
 ```
 
 [.worker syntax reference](http://dev.iron.io/worker/reference/dotworker/)
+
+## Queueing a Worker
+
+```go
+ids, err := w.TaskQueue(worker.Task{CodeName: "HelloWorld"})
+```
+
+### Setting Payload
+
+You could specify payload by assigning it to the field of Task struct:
+
+```go
+payload  := `{ \"first\" : \"Hello", \"second\" : \"World\" }`
+ids, err := w.TaskQueue(worker.Task{CodeName: "HelloWorld", Payload: payload})
+```
+
+### Queueing Parameters
+
+Task struct has some fields for setting additional parameters:
+
+  - **Priority**: Setting the priority of your job. Valid values are 0, 1, and 2. The default is 0.
+  - **Timeout**: The maximum runtime of your task in seconds. No task can exceed 3600 seconds (60 minutes). The default is 3600 but can be set to a shorter duration. Should be of type *time.Duration.
+  - **Delay**: The number of seconds to delay before actually queuing the task. Should be of type *time.Duration. Default is 0.
 
 
 
