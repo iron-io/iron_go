@@ -535,7 +535,9 @@ func main() {
 
 ## Upload code to server
 
-### Using CLI tool (preferred)
+### Using CLI tool
+
+#### Upload binary (preferred)
 
 * Get [CLI](http://dev.iron.io/worker/reference/cli) tool
 * Download or create `iron.json` config file with project_id/password
@@ -545,6 +547,24 @@ func main() {
 ```ruby
 runtime 'binary'
 exec 'your_binary_file_name'
+```
+* Upload!
+
+```sh
+$ iron_worker upload HelloWorld
+```
+
+#### Upload .go
+
+You could upload Go sources. It will be ran using `go run your_file.go`
+
+* Get [CLI](http://dev.iron.io/worker/reference/cli) tool
+* Download or create `iron.json` config file with project_id/password
+* Create `HelloWorld.worker` file, example:
+
+```ruby
+runtime 'go'
+exec 'hello_world.go'
 ```
 * Upload!
 
