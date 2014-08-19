@@ -296,7 +296,15 @@ func (w *Worker) TaskCancel(taskId string) (err error) {
 }
 
 // TaskProgress sets a Task's Progress
-func (w *Worker) TaskProgress(taskId string, progress int) (err error) { return }
+func (w *Worker) TaskProgress(taskId string, progress int, msg string) (err error) {
+	payload := map[string]interface{}{
+		"msg":     msg,
+		"percent": progress,
+	}
+
+	err = w.tasks(taskId, "progress").Req("POST", payload, nil)
+	return
+}
 
 // TaskQueueWebhook queues a Task from a Webhook
 func (w *Worker) TaskQueueWebhook() (err error) { return }
