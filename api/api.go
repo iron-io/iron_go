@@ -24,6 +24,7 @@ type URL struct {
 
 var (
 	debug bool
+	HttpClient = &http.Client{}
 )
 
 func dbg(v ...interface{}) {
@@ -90,8 +91,6 @@ func (u *URL) Req(method string, in, out interface{}) (err error) {
 var MaxRequestRetries = 5
 
 func (u *URL) Request(method string, body io.Reader) (response *http.Response, err error) {
-	client := http.Client{}
-
 	var bodyBytes []byte
 	if body == nil {
 		bodyBytes = []byte{}
@@ -120,7 +119,7 @@ func (u *URL) Request(method string, body io.Reader) (response *http.Response, e
 
 	for tries := 0; tries <= MaxRequestRetries; tries++ {
 		request.Body = ioutil.NopCloser(bytes.NewBuffer(bodyBytes))
-		response, err = client.Do(request)
+		response, err = HttpClient.Do(request)
 		if err != nil {
 			if err == io.EOF {
 				continue
