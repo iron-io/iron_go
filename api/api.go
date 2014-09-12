@@ -24,6 +24,9 @@ type URL struct {
 
 var (
 	debug bool
+
+	// HttpClient is the client used by iron_go to make each http request. It is exported in case
+	// the client would like to modify it from the default behavior from http.DefaultClient.
 	HttpClient = &http.Client{}
 )
 
