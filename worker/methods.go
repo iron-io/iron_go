@@ -59,9 +59,11 @@ type TaskInfo struct {
 	Payload       string    `json:"payload"`
 	ProjectId     string    `json:"project_id"`
 	Status        string    `json:"status"`
+	Msg           string    `json:"msg,omitempty"`
 	Duration      int       `json:"duration"`
 	RunTimes      int       `json:"run_times"`
 	Timeout       int       `json:"timeout"`
+	Percent       int       `json:"percent,omitempty"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	StartTime     time.Time `json:"start_time"`
@@ -296,7 +298,15 @@ func (w *Worker) TaskCancel(taskId string) (err error) {
 }
 
 // TaskProgress sets a Task's Progress
-func (w *Worker) TaskProgress(taskId string, progress int) (err error) { return }
+func (w *Worker) TaskProgress(taskId string, progress int, msg string) (err error) {
+	payload := map[string]interface{}{
+		"msg":     msg,
+		"percent": progress,
+	}
+
+	err = w.tasks(taskId, "progress").Req("POST", payload, nil)
+	return
+}
 
 // TaskQueueWebhook queues a Task from a Webhook
 func (w *Worker) TaskQueueWebhook() (err error) { return }
