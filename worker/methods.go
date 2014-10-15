@@ -247,7 +247,7 @@ func (w *Worker) TaskQueue(tasks ...Task) (taskIds []string, err error) {
 			thisTask["timeout"] = (*task.Timeout).Seconds()
 		}
 		if task.Delay != nil {
-			thisTask["delay"] = (*task.Delay).Seconds()
+			thisTask["delay"] = int64((*task.Delay).Seconds())
 		}
 
 		outTasks = append(outTasks, thisTask)
