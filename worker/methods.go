@@ -64,6 +64,7 @@ type TaskInfo struct {
 	RunTimes      int       `json:"run_times"`
 	Timeout       int       `json:"timeout"`
 	Percent       int       `json:"percent,omitempty"`
+	Delay         int       `json:"delay,omitempty"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 	StartTime     time.Time `json:"start_time"`
