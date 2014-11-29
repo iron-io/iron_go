@@ -69,7 +69,7 @@ func New(queueName string) *Queue {
 	return &Queue{Settings: config.Config("iron_mq"), Name: queueName}
 }
 
-func ListProjectQueues(projectId string, token string, page int, perPage int) (queues []Queue, err error) {
+func ListProjectQueues(projectId string, token string, host string, port uint16, page int, perPage int) (queues []Queue, err error) {
 	out := []struct {
 		Id         string
 		Project_id string
@@ -79,6 +79,8 @@ func ListProjectQueues(projectId string, token string, page int, perPage int) (q
 	q := New("")
 	q.Settings.ProjectId = projectId
 	q.Settings.Token = token
+	q.Settings.Host = host
+	q.Settings.Port = port
 	err = q.queues().
 		QueryAdd("page", "%d", page).
 		QueryAdd("per_page", "%d", perPage).
