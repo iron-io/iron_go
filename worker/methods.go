@@ -23,6 +23,8 @@ type Schedule struct {
 	RunEvery       *int           `json:"run_every"`
 	RunTimes       *int           `json:"run_times"`
 	StartAt        *time.Time     `json:"start_at"`
+	Cluster        string         `json:"cluster"`
+	Label          string         `json:"label"`
 }
 
 type ScheduleInfo struct {
@@ -48,6 +50,8 @@ type Task struct {
 	Priority int            `json:"priority"`
 	Timeout  *time.Duration `json:"timeout"`
 	Delay    *time.Duration `json:"delay"`
+	Cluster  string         `json:"cluster"`
+	Label    string         `json:"label"`
 }
 
 type TaskInfo struct {
@@ -242,6 +246,8 @@ func (w *Worker) TaskQueue(tasks ...Task) (taskIds []string, err error) {
 			"code_name": task.CodeName,
 			"payload":   task.Payload,
 			"priority":  task.Priority,
+			"cluster":   task.Cluster,
+			"label":     task.Label,
 		}
 		if task.Timeout != nil {
 			thisTask["timeout"] = (*task.Timeout).Seconds()
@@ -330,6 +336,8 @@ func (w *Worker) Schedule(schedules ...Schedule) (scheduleIds []string, err erro
 			"code_name": schedule.CodeName,
 			"name":      schedule.Name,
 			"payload":   schedule.Payload,
+			"label":     schedule.Label,
+			"cluster":   schedule.Cluster,
 		}
 		if schedule.Delay != nil {
 			sm["delay"] = (*schedule.Delay).Seconds()
