@@ -59,10 +59,16 @@ func dbg(v ...interface{}) {
 	}
 }
 
+// ManualConfig gathers configuration from env variables, json config files
+// and finally overwrites it with specified instance of Settings.
+func ManualConfig(fullProduct string, configuration *Settings) (settings Settings) {
+	return config(fullProduct, "", configuration)
+}
+
 // Config gathers configuration from env variables and json config files.
 // Examples of fullProduct are "iron_worker", "iron_cache", "iron_mq".
 func Config(fullProduct string) (settings Settings) {
-	return config(fullProduct, "")
+	return config(fullProduct, "", nil)
 }
 
 // Like Config, but useful for keeping multiple dev environment information in
@@ -79,10 +85,10 @@ func Config(fullProduct string) (settings Settings) {
 //        }
 //    }
 func ConfigWithEnv(fullProduct, env string) (settings Settings) {
-	return config(fullProduct, env)
+	return config(fullProduct, env, nil)
 }
 
-func config(fullProduct, env string) Settings {
+func config(fullProduct, env string, configuration *Settings) Settings {
 	if os.Getenv("IRON_CONFIG_DEBUG") != "" {
 		debug = true
 		dbg("debugging of config enabled")
@@ -109,6 +115,7 @@ func config(fullProduct, env string) Settings {
 	base.globalEnv(family, product)
 	base.productEnv(family, product)
 	base.localConfig(family, product, env)
+	base.manualConfig(configuration)
 
 	return base
 }
@@ -140,6 +147,12 @@ func (s *Settings) productEnv(family, product string) {
 
 func (s *Settings) localConfig(family, product, env string) {
 	s.UseConfigFile(family, product, "iron.json", env)
+}
+
+func (s *Settings) manualConfig(settings *Settings) {
+	if settings != nil {
+		s.UseSettings(settings)
+	}
 }
 
 func (s *Settings) commonEnv(prefix string) {
@@ -230,5 +243,30 @@ func (s *Settings) UseConfigMap(data map[string]interface{}) {
 	if agent, found := data["user_agent"]; found {
 		s.UserAgent = agent.(string)
 		dbg("config has user_agent:", s.UserAgent)
+	}
+}
+
+// Merge the given instance into the settings.
+func (s *Settings) UseSettings(settings *Settings) {
+	if settings.Token != "" {
+		s.Token = settings.Token
+	}
+	if settings.ProjectId != "" {
+		s.ProjectId = settings.ProjectId
+	}
+	if settings.Host != "" {
+		s.Host = settings.Host
+	}
+	if settings.Scheme != "" {
+		s.Scheme = settings.Scheme
+	}
+	if settings.ApiVersion != "" {
+		s.ApiVersion = settings.ApiVersion
+	}
+	if settings.UserAgent != "" {
+		s.UserAgent = settings.UserAgent
+	}
+	if settings.Port > 0 {
+		s.Port = settings.Port
 	}
 }
