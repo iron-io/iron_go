@@ -83,6 +83,7 @@ type Code struct {
 	Config         string        `json:"config,omitempty"`
 	MaxConcurrency int           `json:"max_concurrency,omitempty"`
 	Retries        int           `json:"retries,omitempty"`
+	Stack          string        `json:"stack"`
 	RetriesDelay   time.Duration `json:"-"`
 	Source         CodeSource    `json:"-"`
 }
