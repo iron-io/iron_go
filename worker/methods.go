@@ -238,6 +238,52 @@ func (w *Worker) TaskList() (tasks []TaskInfo, err error) {
 	return out["tasks"], nil
 }
 
+type TaskListParams struct {
+	CodeName string
+	Page     int
+	PerPage  int
+	FromTime time.Time
+	ToTime   time.Time
+	Statuses map[string]bool
+}
+
+func (w *Worker) FilteredTaskList(params TaskListParams) (tasks []TaskInfo, err error) {
+	out := map[string][]TaskInfo{}
+	url := w.tasks()
+
+	if params.CodeName != "" {
+		url.QueryAdd("code_name", "%s", params.CodeName)
+	}
+
+	if params.Page > 0 {
+		url.QueryAdd("page", "%d", params.Page)
+	}
+
+	if params.PerPage > 0 {
+		url.QueryAdd("per_page", "%d", params.PerPage)
+	}
+
+	if fromTimeSeconds := params.FromTime.Unix(); fromTimeSeconds > 0 {
+		url.QueryAdd("from_time", "%d", fromTimeSeconds)
+	}
+
+	if toTimeSeconds := params.ToTime.Unix(); toTimeSeconds > 0 {
+		url.QueryAdd("to_time", "%d", toTimeSeconds)
+	}
+
+	for status, value := range params.Statuses {
+		url.QueryAdd(status, "%d", value)
+	}
+
+	err = url.Req("GET", nil, &out)
+
+	if err != nil {
+		return
+	}
+
+	return out["tasks"], nil
+}
+
 // TaskQueue queues a task
 func (w *Worker) TaskQueue(tasks ...Task) (taskIds []string, err error) {
 	outTasks := make([]map[string]interface{}, 0, len(tasks))
