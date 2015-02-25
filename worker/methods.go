@@ -244,7 +244,7 @@ type TaskListParams struct {
 	PerPage  int
 	FromTime time.Time
 	ToTime   time.Time
-	Statuses map[string]bool
+	Statuses []string
 }
 
 func (w *Worker) FilteredTaskList(params TaskListParams) (tasks []TaskInfo, err error) {
@@ -271,8 +271,8 @@ func (w *Worker) FilteredTaskList(params TaskListParams) (tasks []TaskInfo, err 
 		url.QueryAdd("to_time", "%d", toTimeSeconds)
 	}
 
-	for status, value := range params.Statuses {
-		url.QueryAdd(status, "%d", value)
+	for _, status := range params.Statuses {
+		url.QueryAdd(status, "%d", true)
 	}
 
 	err = url.Req("GET", nil, &out)
