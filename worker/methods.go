@@ -251,9 +251,7 @@ func (w *Worker) FilteredTaskList(params TaskListParams) (tasks []TaskInfo, err 
 	out := map[string][]TaskInfo{}
 	url := w.tasks()
 
-	if params.CodeName != "" {
-		url.QueryAdd("code_name", "%s", params.CodeName)
-	}
+	url.QueryAdd("code_name", "%s", params.CodeName)
 
 	if params.Page > 0 {
 		url.QueryAdd("page", "%d", params.Page)
