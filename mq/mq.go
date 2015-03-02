@@ -24,8 +24,8 @@ type QueueInfo struct {
 	Name          string            `json:"name,omitempty"`
 	PushType      string            `json:"push_type,omitempty"`
 	Reserved      int               `json:"reserved,omitempty"`
-	RetriesDelay  int               `json:"retries,omitempty"`
-	Retries       int               `json:"retries_delay,omitempty"`
+	RetriesDelay  int               `json:"retries_delay,omitempty"`
+	Retries       int               `json:"retries,omitempty"`
 	Size          int               `json:"size,omitempty"`
 	Subscribers   []QueueSubscriber `json:"subscribers,omitempty"`
 	Alerts        []Alert           `json:"alerts,omitempty"`
