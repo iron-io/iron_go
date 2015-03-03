@@ -312,6 +312,20 @@ func (q Queue) DeleteMessage(msgId string) (err error) {
 	return q.queues(q.Name, "messages", msgId).Req("DELETE", nil, nil)
 }
 
+func (q Queue) DeleteMessages(messages []*Message) error {
+	values := make([]string, len(messages))
+
+	for i, val := range messages {
+		values[i] = val.Id
+	}
+	in := struct {
+		Ids []string `json:"ids"`
+	}{
+		Ids: values,
+	}
+	return q.queues(q.Name, "messages").Req("DELETE", in, nil)
+}
+
 // Reset timeout of message to keep it reserved
 func (q Queue) TouchMessage(msgId string) (err error) {
 	return q.queues(q.Name, "messages", msgId, "touch").Req("POST", nil, nil)
