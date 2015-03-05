@@ -41,8 +41,9 @@ type Message struct {
 	Timeout int64 `json:"timeout,omitempty"`
 	// Delay is the amount of time in seconds to wait before adding the message
 	// to the queue.
-	Delay int64 `json:"delay,omitempty"`
-	q     Queue
+	Delay         int64 `json:"delay,omitempty"`
+	ReservedCount int64 `json:"reserved_count,omitempty"`
+	q             Queue
 }
 
 type PushStatus struct {
