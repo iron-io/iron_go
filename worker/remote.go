@@ -4,9 +4,9 @@ import (
 	"encoding/json"
 	"flag"
 	"io"
+	"io/ioutil"
 	"os"
 )
-
 
 var (
 	TaskDir     string
@@ -37,6 +37,47 @@ func PayloadFromJSON(v interface{}) error {
 	return json.NewDecoder(reader).Decode(v)
 }
 
+func PayloadAsString() (string, error) {
+	reader, err := PayloadReader()
+	if err != nil {
+		return "", err
+	}
+	defer reader.Close()
+
+	b, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func ConfigReader() (io.ReadCloser, error) {
+	return os.Open(configFlag)
+}
+
+func ConfigFromJSON(v interface{}) error {
+	reader, err := ConfigReader()
+	if err != nil {
+		return err
+	}
+	defer reader.Close()
+	return json.NewDecoder(reader).Decode(v)
+}
+
+func ConfigAsString() (string, error) {
+	reader, err := ConfigReader()
+	if err != nil {
+		return "", err
+	}
+	defer reader.Close()
+
+	b, err := ioutil.ReadAll(reader)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
 func IronTaskId() string {
-	return idFlag
+	return TaskId
 }

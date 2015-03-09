@@ -121,10 +121,15 @@ func config(fullProduct, env string, configuration *Settings) Settings {
 }
 
 func (s *Settings) globalConfig(family, product, env string) {
-	if u, err := user.Current(); err == nil {
-		path := filepath.Join(u.HomeDir, ".iron.json")
-		s.UseConfigFile(family, product, path, env)
+	u, err := user.Current()
+	if err != nil {
+		fmt.Println("Error getting user.Current():", err)
+		return
+
 	}
+	//	fmt.Println("Homedir:", u.HomeDir)
+	path := filepath.Join(u.HomeDir, ".iron.json")
+	s.UseConfigFile(family, product, path, env)
 }
 
 // The environment variables the scheme looks for are all of the same formula:
