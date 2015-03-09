@@ -9,16 +9,18 @@ import (
 
 
 var (
-	taskDirFlag string
+	TaskDir     string
 	payloadFlag string
-	idFlag      string
+	TaskId      string
+	configFlag  string
 )
 
 // call this to parse flags before using the other methods.
 func ParseFlags() {
-	flag.StringVar(&taskDirFlag, "d", "", "task dir")
+	flag.StringVar(&TaskDir, "d", "", "task dir")
 	flag.StringVar(&payloadFlag, "payload", "", "payload file")
-	flag.StringVar(&idFlag, "id", "", "task id")
+	flag.StringVar(&TaskId, "id", "", "task id")
+	flag.StringVar(&configFlag, "config", "", "config file")
 	flag.Parse()
 }
 
