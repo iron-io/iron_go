@@ -64,6 +64,7 @@ type TaskInfo struct {
 	ProjectId     string    `json:"project_id"`
 	Status        string    `json:"status"`
 	Msg           string    `json:"msg,omitempty"`
+	ScheduleId    string    `json:"schedule_id"`
 	Duration      int       `json:"duration"`
 	RunTimes      int       `json:"run_times"`
 	Timeout       int       `json:"timeout"`
