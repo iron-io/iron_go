@@ -208,7 +208,11 @@ func (s *Settings) UseConfigFile(family, product, path, env string) {
 	dbg("config in", path, "found")
 
 	if env != "" {
-		data = data[env].(map[string]interface{})
+		envdata, ok := data[env].(map[string]interface{})
+		if !ok {
+			return // bail, they specified an env but we couldn't find one, so error out.
+		}
+		data = envdata
 	}
 	s.UseConfigMap(data)
 
