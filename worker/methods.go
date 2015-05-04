@@ -79,12 +79,14 @@ type CodeSource map[string][]byte // map[pathInZip]code
 
 type Code struct {
 	Name           string        `json:"name"`
-	Runtime        string        `json:"runtime"`
-	FileName       string        `json:"file_name"`
+	Runtime        *string       `json:"runtime"`
+	FileName       *string       `json:"file_name"`
 	Config         string        `json:"config,omitempty"`
 	MaxConcurrency int           `json:"max_concurrency,omitempty"`
 	Retries        int           `json:"retries,omitempty"`
-	Stack          string        `json:"stack"`
+	Stack          *string       `json:"stack"`
+	Image          *string       `json:"image"`
+	Command        *string       `json:"command"`
 	RetriesDelay   time.Duration `json:"-"`
 	Source         CodeSource    `json:"-"`
 }
@@ -95,7 +97,7 @@ type CodeInfo struct {
 	LatestHistoryId string    `json:"latest_history_id"`
 	Name            string    `json:"name"`
 	ProjectId       string    `json:"project_id"`
-	Runtime         string    `json:"runtime"`
+	Runtime         *string   `json:"runtime"`
 	Rev             int       `json:"rev"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
