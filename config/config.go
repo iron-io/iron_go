@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
-	"os/user"
 	"path/filepath"
 	"runtime"
 	"strconv"
@@ -121,14 +120,12 @@ func config(fullProduct, env string, configuration *Settings) Settings {
 }
 
 func (s *Settings) globalConfig(family, product, env string) {
-	u, err := user.Current()
+	home, err := homeDir()
 	if err != nil {
-		fmt.Println("Error getting user.Current():", err)
+		fmt.Println("Error getting home directory:", err)
 		return
-
 	}
-	//	fmt.Println("Homedir:", u.HomeDir)
-	path := filepath.Join(u.HomeDir, ".iron.json")
+	path := filepath.Join(home, ".iron.json")
 	s.UseConfigFile(family, product, path, env)
 }
 
