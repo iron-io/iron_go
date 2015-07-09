@@ -10,6 +10,7 @@ import (
 
 var (
 	TaskDir     string
+	envFlag     string
 	payloadFlag string
 	TaskId      string
 	configFlag  string
@@ -18,6 +19,7 @@ var (
 // call this to parse flags before using the other methods.
 func ParseFlags() {
 	flag.StringVar(&TaskDir, "d", "", "task dir")
+	flag.StringVar(&envFlag, "e", "", "environment type")
 	flag.StringVar(&payloadFlag, "payload", "", "payload file")
 	flag.StringVar(&TaskId, "id", "", "task id")
 	flag.StringVar(&configFlag, "config", "", "config file")
