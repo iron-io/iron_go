@@ -78,6 +78,7 @@ type TaskInfo struct {
 type CodeSource map[string][]byte // map[pathInZip]code
 
 type Code struct {
+	Id             string        `json:"id,omitempty"`
 	Name           string        `json:"name"`
 	Runtime        string        `json:"runtime"`
 	FileName       string        `json:"file_name"`
@@ -89,6 +90,7 @@ type Code struct {
 	Command        string        `json:"command"`
 	RetriesDelay   time.Duration `json:"-"`
 	Source         CodeSource    `json:"-"`
+	Host           string        `json:"host,omitempty"`
 }
 
 type CodeInfo struct {
