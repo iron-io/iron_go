@@ -80,12 +80,9 @@ type CodeSource map[string][]byte // map[pathInZip]code
 type Code struct {
 	Id             string        `json:"id,omitempty"`
 	Name           string        `json:"name"`
-	Runtime        string        `json:"runtime"`
-	FileName       string        `json:"file_name"`
 	Config         string        `json:"config,omitempty"`
 	MaxConcurrency int           `json:"max_concurrency,omitempty"`
 	Retries        int           `json:"retries,omitempty"`
-	Stack          string        `json:"stack"`
 	Image          string        `json:"image"`
 	Command        string        `json:"command"`
 	RetriesDelay   time.Duration `json:"-"`
@@ -99,7 +96,6 @@ type CodeInfo struct {
 	LatestHistoryId string    `json:"latest_history_id"`
 	Name            string    `json:"name"`
 	ProjectId       string    `json:"project_id"`
-	Runtime         *string   `json:"runtime"`
 	Rev             int       `json:"rev"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
@@ -142,8 +138,6 @@ func (w *Worker) CodePackageUpload(code Code) (id string, err error) {
 	jEncoder := json.NewEncoder(mMetaWriter)
 	err = jEncoder.Encode(map[string]interface{}{
 		"name":            code.Name,
-		"runtime":         code.Runtime,
-		"file_name":       code.FileName,
 		"config":          code.Config,
 		"max_concurrency": code.MaxConcurrency,
 		"retries":         code.Retries,
