@@ -80,14 +80,14 @@ type CodeSource map[string][]byte // map[pathInZip]code
 type Code struct {
 	Id             string        `json:"id,omitempty"`
 	Name           string        `json:"name"`
-	Runtime        string        `json:"runtime"`
-	FileName       string        `json:"file_name"`
+	Runtime        string        `json:"runtime,omitempty"`
+	FileName       string        `json:"file_name,omitempty"`
 	Config         string        `json:"config,omitempty"`
 	MaxConcurrency int           `json:"max_concurrency,omitempty"`
 	Retries        int           `json:"retries,omitempty"`
-	Stack          string        `json:"stack"`
-	Image          string        `json:"image"`
-	Command        string        `json:"command"`
+	Stack          string        `json:"stack,omitempty"`
+	Image          string        `json:"image,omitempty"`
+	Command        string        `json:"command,omitempty"`
 	RetriesDelay   time.Duration `json:"-"`
 	Source         CodeSource    `json:"-"`
 	Host           string        `json:"host,omitempty"`
@@ -95,11 +95,11 @@ type Code struct {
 
 type CodeInfo struct {
 	Id              string    `json:"id"`
-	LatestChecksum  string    `json:"latest_checksum"`
+	LatestChecksum  string    `json:"latest_checksum,omitempty"`
 	LatestHistoryId string    `json:"latest_history_id"`
 	Name            string    `json:"name"`
 	ProjectId       string    `json:"project_id"`
-	Runtime         *string   `json:"runtime"`
+	Runtime         *string   `json:"runtime,omitempty"`
 	Rev             int       `json:"rev"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
