@@ -111,7 +111,6 @@ func (u *URL) Request(method string, body io.Reader) (response *http.Response, e
 
 	request.Header.Set("Authorization", "OAuth "+u.Settings.Token)
 	request.Header.Set("Accept", "application/json")
-	request.Header.Set("Accept-Encoding", "gzip/deflate")
 	request.Header.Set("User-Agent", u.Settings.UserAgent)
 
 	if body != nil {
