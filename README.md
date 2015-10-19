@@ -412,13 +412,7 @@ Subscribers can be any HTTP endpoint. `push_type` is one of:
 * `unicast`: will push to one and only one endpoint/subscriber
 
 ```go
-subscription := mq.Subscription {
-	PushType: "multicast",
-	Retries:  3,
-	RetriesDelay: 60,
-}
-err := q.Subscribe(
-	subscription, 
+err := q.AddSubscribers(
 	"http://mysterious-brook-1807.herokuapp.com/ironmq_push_3", 
 	"http://mysterious-brook-1807.herokuapp.com/ironmq_push_4")
 ```

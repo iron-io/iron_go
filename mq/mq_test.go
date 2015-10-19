@@ -56,6 +56,31 @@ func TestEverything(t *testing.T) {
 			Expect(msg.Body, ToDeepEqual, "just a little test")
 		})
 
+		It("Delete messages", func() {
+			q := mq.New(qname)
+
+			strings := []string{}
+			for n := 0; n < 100; n++ {
+				strings = append(strings, fmt.Sprint("test: ", n))
+			}
+
+			_, err := q.PushStrings(strings...)
+			Expect(err, ToBeNil)
+
+			info, err := q.Info()
+			Expect(err, ToBeNil)
+			Expect(info.Size, ToEqual, 100)
+
+			msgs, err := q.GetN(100)
+			Expect(err, ToBeNil)
+
+			Expect(q.DeleteMessages(msgs), ToBeNil)
+
+			info, err = q.Info()
+			Expect(err, ToBeNil)
+			Expect(info.Size, ToEqual, 0)
+		})
+
 		It("clears the queue", func() {
 			q := mq.New(qname)
 

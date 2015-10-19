@@ -23,6 +23,8 @@ type Schedule struct {
 	RunEvery       *int           `json:"run_every"`
 	RunTimes       *int           `json:"run_times"`
 	StartAt        *time.Time     `json:"start_at"`
+	Cluster        string         `json:"cluster"`
+	Label          string         `json:"label"`
 }
 
 type ScheduleInfo struct {
@@ -48,6 +50,8 @@ type Task struct {
 	Priority int            `json:"priority"`
 	Timeout  *time.Duration `json:"timeout"`
 	Delay    *time.Duration `json:"delay"`
+	Cluster  string         `json:"cluster"`
+	Label    string         `json:"label"`
 }
 
 type TaskInfo struct {
@@ -60,6 +64,7 @@ type TaskInfo struct {
 	ProjectId     string    `json:"project_id"`
 	Status        string    `json:"status"`
 	Msg           string    `json:"msg,omitempty"`
+	ScheduleId    string    `json:"schedule_id"`
 	Duration      int       `json:"duration"`
 	RunTimes      int       `json:"run_times"`
 	Timeout       int       `json:"timeout"`
@@ -73,23 +78,28 @@ type TaskInfo struct {
 type CodeSource map[string][]byte // map[pathInZip]code
 
 type Code struct {
+	Id             string        `json:"id,omitempty"`
 	Name           string        `json:"name"`
-	Runtime        string        `json:"runtime"`
-	FileName       string        `json:"file_name"`
+	Runtime        string        `json:"runtime,omitempty"`
+	FileName       string        `json:"file_name,omitempty"`
 	Config         string        `json:"config,omitempty"`
 	MaxConcurrency int           `json:"max_concurrency,omitempty"`
 	Retries        int           `json:"retries,omitempty"`
+	Stack          string        `json:"stack,omitempty"`
+	Image          string        `json:"image,omitempty"`
+	Command        string        `json:"command,omitempty"`
 	RetriesDelay   time.Duration `json:"-"`
 	Source         CodeSource    `json:"-"`
+	Host           string        `json:"host,omitempty"`
 }
 
 type CodeInfo struct {
 	Id              string    `json:"id"`
-	LatestChecksum  string    `json:"latest_checksum"`
+	LatestChecksum  string    `json:"latest_checksum,omitempty"`
 	LatestHistoryId string    `json:"latest_history_id"`
 	Name            string    `json:"name"`
 	ProjectId       string    `json:"project_id"`
-	Runtime         string    `json:"runtime"`
+	Runtime         *string   `json:"runtime,omitempty"`
 	Rev             int       `json:"rev"`
 	CreatedAt       time.Time `json:"created_at"`
 	UpdatedAt       time.Time `json:"updated_at"`
@@ -233,6 +243,50 @@ func (w *Worker) TaskList() (tasks []TaskInfo, err error) {
 	return out["tasks"], nil
 }
 
+type TaskListParams struct {
+	CodeName string
+	Page     int
+	PerPage  int
+	FromTime time.Time
+	ToTime   time.Time
+	Statuses []string
+}
+
+func (w *Worker) FilteredTaskList(params TaskListParams) (tasks []TaskInfo, err error) {
+	out := map[string][]TaskInfo{}
+	url := w.tasks()
+
+	url.QueryAdd("code_name", "%s", params.CodeName)
+
+	if params.Page > 0 {
+		url.QueryAdd("page", "%d", params.Page)
+	}
+
+	if params.PerPage > 0 {
+		url.QueryAdd("per_page", "%d", params.PerPage)
+	}
+
+	if fromTimeSeconds := params.FromTime.Unix(); fromTimeSeconds > 0 {
+		url.QueryAdd("from_time", "%d", fromTimeSeconds)
+	}
+
+	if toTimeSeconds := params.ToTime.Unix(); toTimeSeconds > 0 {
+		url.QueryAdd("to_time", "%d", toTimeSeconds)
+	}
+
+	for _, status := range params.Statuses {
+		url.QueryAdd(status, "%d", true)
+	}
+
+	err = url.Req("GET", nil, &out)
+
+	if err != nil {
+		return
+	}
+
+	return out["tasks"], nil
+}
+
 // TaskQueue queues a task
 func (w *Worker) TaskQueue(tasks ...Task) (taskIds []string, err error) {
 	outTasks := make([]map[string]interface{}, 0, len(tasks))
@@ -242,12 +296,14 @@ func (w *Worker) TaskQueue(tasks ...Task) (taskIds []string, err error) {
 			"code_name": task.CodeName,
 			"payload":   task.Payload,
 			"priority":  task.Priority,
+			"cluster":   task.Cluster,
+			"label":     task.Label,
 		}
 		if task.Timeout != nil {
 			thisTask["timeout"] = (*task.Timeout).Seconds()
 		}
 		if task.Delay != nil {
-			thisTask["delay"] = (*task.Delay).Seconds()
+			thisTask["delay"] = int64((*task.Delay).Seconds())
 		}
 
 		outTasks = append(outTasks, thisTask)
@@ -330,6 +386,8 @@ func (w *Worker) Schedule(schedules ...Schedule) (scheduleIds []string, err erro
 			"code_name": schedule.CodeName,
 			"name":      schedule.Name,
 			"payload":   schedule.Payload,
+			"label":     schedule.Label,
+			"cluster":   schedule.Cluster,
 		}
 		if schedule.Delay != nil {
 			sm["delay"] = (*schedule.Delay).Seconds()

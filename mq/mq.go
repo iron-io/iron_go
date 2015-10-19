@@ -24,8 +24,8 @@ type QueueInfo struct {
 	Name          string            `json:"name,omitempty"`
 	PushType      string            `json:"push_type,omitempty"`
 	Reserved      int               `json:"reserved,omitempty"`
-	RetriesDelay  int               `json:"retries,omitempty"`
-	Retries       int               `json:"retries_delay,omitempty"`
+	RetriesDelay  int               `json:"retries_delay,omitempty"`
+	Retries       int               `json:"retries,omitempty"`
 	Size          int               `json:"size,omitempty"`
 	Subscribers   []QueueSubscriber `json:"subscribers,omitempty"`
 	Alerts        []Alert           `json:"alerts,omitempty"`
@@ -41,7 +41,8 @@ type Message struct {
 	Timeout int64 `json:"timeout,omitempty"`
 	// Delay is the amount of time in seconds to wait before adding the message
 	// to the queue.
-	Delay int64 `json:"delay,omitempty"`
+	Delay         int64 `json:"delay,omitempty"`
+	ReservedCount int64 `json:"reserved_count,omitempty"`
 	// expires_in: How long in seconds to keep the item on the queue before it is deleted.
 	// Default is 604,800 seconds (7 days). Maximum is 2,592,000 seconds (30 days).
 	ExpiresIn int64 `json:"expires_in,omitempty"`
@@ -72,7 +73,14 @@ func New(queueName string) *Queue {
 	return &Queue{Settings: config.Config("iron_mq"), Name: queueName}
 }
 
-func ListProjectQueues(projectId string, token string, page int, perPage int) (queues []Queue, err error) {
+// ConfigNew uses the specified settings over configuration specified in an iron.json file or
+// environment variables to return a Queue object capable of acquiring information about or
+// modifying the queue specified by queueName.
+func ConfigNew(queueName string, settings *config.Settings) Queue {
+	return Queue{Settings: config.ManualConfig("iron_mq", settings), Name: queueName}
+}
+
+func ListSettingsQueues(settings config.Settings, page int, perPage int) (queues []Queue, err error) {
 	out := []struct {
 		Id         string
 		Project_id string
@@ -80,8 +88,7 @@ func ListProjectQueues(projectId string, token string, page int, perPage int) (q
 	}{}
 
 	q := New("")
-	q.Settings.ProjectId = projectId
-	q.Settings.Token = token
+	q.Settings = settings
 	err = q.queues().
 		QueryAdd("page", "%d", page).
 		QueryAdd("per_page", "%d", perPage).
@@ -99,6 +106,13 @@ func ListProjectQueues(projectId string, token string, page int, perPage int) (q
 	}
 
 	return
+}
+
+func ListProjectQueues(projectId string, token string, page int, perPage int) (queues []Queue, err error) {
+	settings := config.Config("iron_mq")
+	settings.ProjectId = projectId
+	settings.Token = token
+	return ListSettingsQueues(settings, page, perPage)
 }
 
 func ListQueues(page, perPage int) (queues []Queue, err error) {
@@ -300,6 +314,20 @@ func (q Queue) Clear() (err error) {
 // Delete message from queue
 func (q Queue) DeleteMessage(msgId string) (err error) {
 	return q.queues(q.Name, "messages", msgId).Req("DELETE", nil, nil)
+}
+
+func (q Queue) DeleteMessages(messages []*Message) error {
+	values := make([]string, len(messages))
+
+	for i, val := range messages {
+		values[i] = val.Id
+	}
+	in := struct {
+		Ids []string `json:"ids"`
+	}{
+		Ids: values,
+	}
+	return q.queues(q.Name, "messages").Req("DELETE", in, nil)
 }
 
 // Reset timeout of message to keep it reserved
