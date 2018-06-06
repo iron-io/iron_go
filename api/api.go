@@ -170,7 +170,7 @@ var HTTPErrorDescriptions = map[int]string{
 }
 
 func ResponseAsError(response *http.Response) HTTPResponseError {
-	if response.StatusCode == http.StatusOK {
+	if response.StatusCode == http.StatusOK || response.StatusCode == http.StatusCreated {
 		return nil
 	}
 
