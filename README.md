@@ -478,5 +478,139 @@ q.Update(mq.QueueInfo{
 * [Other Client Libraries](http://dev.iron.io/mq/libraries/)
 * [Live Chat, Support & Fun](http://get.iron.io/chat)
 
+
+
+
+# IronWorker
+
+IronWorker is a massively scalable background processing system.
+[See How It Works](http://www.iron.io/products/worker/how)
+
+## Getting Started
+
+### Get credentials
+To start using iron_go/worker, you need to sign up and get an oauth token.
+
+1. Go to http://iron.io/ and sign up.
+2. Get an Oauth Token at http://hud.iron.io/tokens
+
+### Configure
+
+1\. Reference the library:
+
+```go
+import "github.com/iron-io/iron_go/mq"
+```
+
+2\. [Setup your Iron.io credentials](http://dev.iron.io/mq/reference/configuration/)
+
+3\. Create an IronMQ client object:
+
+```go
+worker := worker.New()
+```
+
+
+## Creating a Worker
+
+Here's an example worker:
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+	fmt.Println("Hello World!")
+}
+```
+
+## Upload code to server
+
+### Using CLI tool
+
+#### Upload binary (preferred)
+
+* Get [CLI](http://dev.iron.io/worker/reference/cli) tool
+* Download or create `iron.json` config file with project_id/password
+* Build your .go file using `go build`
+* Create `HelloWorld.worker` file, example:
+
+```ruby
+runtime 'binary'
+exec 'your_binary_file_name'
+```
+* Upload!
+
+```sh
+$ iron_worker upload HelloWorld
+```
+
+#### Upload .go
+
+You could upload Go sources. It will be ran using `go run your_file.go`
+
+* Get [CLI](http://dev.iron.io/worker/reference/cli) tool
+* Download or create `iron.json` config file with project_id/password
+* Create `HelloWorld.worker` file, example:
+
+```ruby
+runtime 'go'
+exec 'hello_world.go'
+```
+* Upload!
+
+```sh
+$ iron_worker upload HelloWorld
+```
+
+[.worker syntax reference](http://dev.iron.io/worker/reference/dotworker/)
+
+## Queueing a Worker
+
+```go
+ids, err := w.TaskQueue(worker.Task{CodeName: "HelloWorld"})
+```
+
+### Setting Payload
+
+You could specify payload by assigning it to the field of Task struct:
+
+```go
+payload  := `{"first": "Hello", "second": "World"}`
+ids, err := w.TaskQueue(worker.Task{CodeName: "HelloWorld", Payload: payload})
+```
+
+### Queueing Parameters
+
+Task struct has some fields for setting additional parameters:
+
+  - **Priority**: Setting the priority of your job. Valid values are 0, 1, and 2. The default is 0.
+  - **Timeout**: The maximum runtime of your task in seconds. No task can exceed 3600 seconds (60 minutes). The default is 3600 but can be set to a shorter duration. Should be of type *time.Duration.
+  - **Delay**: The number of seconds to delay before actually queuing the task. Should be of type *time.Duration. Default is 0.
+
+## Scheduling a Worker
+
+```go
+duration := time.Duration(10) * time.Minute
+payload  := `{"first": "Hello", "second": "World"}`
+ids, err := w.Schedule(worker.Schedule{CodeName: "HelloWorld", Delay: &duration, Payload: payload})
+```
+
+### Scheduling Parameters
+
+Schedule struct has some fields for setting additional parameters:
+
+  - **RunEvery**: The amount of time, in seconds, between runs. By default, the task will only run once. Request will return a 400 error if this field is set to less than 60.
+  - **EndAt**: The time tasks will stop being queued. Should be of type `*time.Time`.
+  - **RunTimes**: The number of times a task will run.
+  - **Priority**: Setting the priority of your job. Valid values are 0, 1, and 2. The default is 0. Higher values means tasks spend less time in the queue once they come off the schedule.
+  - **StartAt**: The time the scheduled task should first be run. Should be of type `*time.Time`.
+  - **MaxConcurrency**: How many worker tasks can run at once.
+
+
+
 -------------
 © 2011 - 2014 Iron.io Inc. All Rights Reserved.
